@@ -1,0 +1,52 @@
+[project]
+name = "aspire-v2"
+version = "0.1.0"
+description = "Reimplementation of ASPIRE: Assistive System for Performance Evaluation in IR, https://github.com/GiorgosPeikos/ASPIRE."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "django==5.2.6",
+    "psycopg==3.2.10",
+    "python-dotenv==1.1.1",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.13.1",
+]
+
+[tool.ruff]
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+    "migrations",
+]
+
+
+[tool.ruff.lint]
+select = ["E", "F"]
