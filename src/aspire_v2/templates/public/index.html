@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Index page</title>
+</head>
+<body>
+    <a href="{% url 'login' %}">Login</a>
+    <a href="{% url 'signup' %}">Sign up</a>
+    Lorem ipsum dolor sit amet consectetur adipisicing elit. Vero molestiae sed quasi, hic alias cupiditate voluptate aliquam numquam pariatur consectetur voluptatum quaerat, maiores quos minus, molestias inventore magnam perferendis tenetur?
+
+    {% if user.is_authenticated %}
+        <a href="{% url 'password_change' %}">Change password</a>
+        <p>authenticated</p>
+        <form action="{% url 'logout' %}" method="post">
+            {% csrf_token %}
+            <input type="submit" value="logout">
+        </form>
+    {% endif %}
+</body>
+</html>

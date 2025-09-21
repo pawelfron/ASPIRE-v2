@@ -57,7 +57,9 @@ ROOT_URLCONF = "aspire_v2.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [
+            BASE_DIR / "templates",
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -130,3 +132,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Custom user model
 AUTH_USER_MODEL = "accounts.User"
+
+LOGIN_REDIRECT_URL = "/"
+LOGIN_URL = "/accounts/login"
+
+# for testing
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
