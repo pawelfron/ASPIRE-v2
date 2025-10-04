@@ -8,3 +8,8 @@ env
 .DS_Store
 
 __pycache__
+
+src/aspire_v2/static/css/output.css
+src/aspire_v2/static/js/*.js
+src/aspire_v2/static/js/*.js.map
+src/aspire_v2/static/js/*.d.ts
