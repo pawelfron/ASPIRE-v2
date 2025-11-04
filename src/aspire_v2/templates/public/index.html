@@ -9,8 +9,9 @@
     <link href="{% static 'css/output.css' %}" rel="stylesheet">
 </head>
 <body>
-    <a href="{% url 'login' %}">Login</a>
-    <a href="{% url 'signup' %}">Sign up</a>
+    <a class="btn" href="{% url 'login' %}">Login</a>
+    <a class="btn" href="{% url 'signup' %}">Sign up</a>
+
     Lorem ipsum dolor sit amet consectetur adipisicing elit. Vero molestiae sed quasi, hic alias cupiditate voluptate aliquam numquam pariatur consectetur voluptatum quaerat, maiores quos minus, molestias inventore magnam perferendis tenetur?
 
     {% if user.is_authenticated %}
@@ -18,7 +19,7 @@
         <p>authenticated</p>
         <form action="{% url 'logout' %}" method="post">
             {% csrf_token %}
-            <input type="submit" value="logout">
+            <input class="btn" type="submit" value="logout">
         </form>
     {% endif %}
 </body>
