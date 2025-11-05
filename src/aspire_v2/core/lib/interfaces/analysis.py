@@ -3,6 +3,8 @@ from typing import ClassVar
 
 from django import forms
 
+from .result import Result
+
 
 class Analysis(ABC):
     """Base class for all analyses."""
@@ -17,5 +19,5 @@ class Analysis(ABC):
         queries_file: str,
         retrieval_runs: list[str],
         **parameters: dict,
-    ):
+    ) -> Result:
         """Execute the analysis."""

@@ -15,3 +15,4 @@ class AnalysisResult(models.Model):
     analysis_type = models.CharField(max_length=100)
     parameters = models.JSONField()
     date = models.DateTimeField(auto_now_add=True)
+    result = models.JSONField()

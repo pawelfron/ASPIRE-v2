@@ -1,19 +1,9 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404, get_list_or_404
 
-from .lib.interfaces import Report, Analysis
-from .lib.reports import MockReport, MockReport2
-from .lib.analyses import MockAnalysis, MockAnalysis2, MockAnalysis3
+from .models import Report, AnalysisResult
 
-TEMP_MAPPING: dict[str, type[Report]] = {
-    "mock1": MockReport,
-    "mock2": MockReport2,
-}
-
-TEMP_ANALYSIS_MAPPING: dict[str, type[Analysis]] = {
-    "mock1": MockAnalysis,
-    "mock2": MockAnalysis2,
-    "mock3": MockAnalysis3,
-}
+from .lib.utils import get_report_class, create_analysis
+from .lib.utils.mappings import REPORT_MAPPING
 
 
 def dashboard(request):
@@ -22,12 +12,12 @@ def dashboard(request):
 
 def list_reports(request):
     return render(
-        request, "core/report_list.html", {"report_list": list(TEMP_MAPPING.keys())}
+        request, "core/report_list.html", {"report_list": list(REPORT_MAPPING.keys())}
     )
 
 
 def configure_report(request, report_slug: str):
-    chosen_report = TEMP_MAPPING[report_slug]
+    chosen_report = get_report_class(report_slug)
 
     if request.method == "POST":
         forms = {
@@ -36,16 +26,25 @@ def configure_report(request, report_slug: str):
         }
 
         if all(form.is_valid() for form in forms.values()):
+            report = Report(title="placeholder")
+            report.save()
+
             data = {key: form.cleaned_data for key, form in forms.items()}
             analyses = {
-                key: TEMP_ANALYSIS_MAPPING[form.prefix]() for key, form in forms.items()
+                key: create_analysis(form.prefix) for key, form in forms.items()
             }
 
-            results = {}
             for key, analysis in analyses.items():
                 result = analysis.execute("", "", [], **data[key])
-                results[key] = result
-            print(results)
+                analysis_result = AnalysisResult(
+                    report=report,
+                    analysis_type=key,
+                    parameters=data[key],
+                    result=result.serialize(),
+                )
+                analysis_result.save()
+
+            return redirect("view_report", report_id=report.id)
 
     return render(
         request,
@@ -56,4 +55,14 @@ def configure_report(request, report_slug: str):
                 for analysis in chosen_report.analyses
             }
         },
+    )
+
+
+def view_report(request, report_id: str):
+    report = get_object_or_404(Report, pk=report_id)
+    analysis_results = get_list_or_404(AnalysisResult, report=report)
+    return render(
+        request,
+        "core/report.html",
+        {"analysis_results": analysis_results, "title": report.title},
     )

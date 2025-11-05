@@ -1,4 +1,5 @@
-from ..interfaces import Analysis
+from ..interfaces import Analysis, Result
+from ..results import ValueResult
 from django import forms
 
 
@@ -23,5 +24,5 @@ class MockAnalysis3(Analysis):
         queries_file: str,
         retrieval_runs: list[str],
         **parameters: dict,
-    ):
-        return parameters["sample_choice"]
+    ) -> Result:
+        return ValueResult(parameters["sample_choice"])

@@ -1,0 +1,8 @@
+<h1>{{ title }}</h1>
+
+{% for analysis_result in analysis_results %}
+    <div>
+        {{ analysis_result.analysis_type }}
+        {{ analysis_result.result }}
+    </div>
+{% endfor %}
