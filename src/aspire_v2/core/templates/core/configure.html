@@ -3,6 +3,8 @@
 <form method="POST">
     {% csrf_token %}
 
+    {{ main_form.as_p }}
+
     {% for key, form in analysis_forms.items %}
         <h3>{{ key }}</h3>
         <div>

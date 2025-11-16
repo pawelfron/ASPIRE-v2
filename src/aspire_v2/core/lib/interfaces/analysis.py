@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import ClassVar
 
-from django import forms
-
 from .result import Result
+
+from django import forms
 
 
 class Analysis(ABC):

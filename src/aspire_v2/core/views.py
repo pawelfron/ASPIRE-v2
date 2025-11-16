@@ -1,13 +1,15 @@
 from django.shortcuts import render, redirect, get_object_or_404, get_list_or_404
 
 from .models import Report, AnalysisResult
+from .forms import ReportForm
 
 from .lib.utils import get_report_class, create_analysis
 from .lib.utils.mappings import REPORT_MAPPING
 
 
 def dashboard(request):
-    return render(request, "core/dashboard.html")
+    reports = Report.objects.filter(author=request.user)
+    return render(request, "core/dashboard.html", {"reports": reports})
 
 
 def list_reports(request):
@@ -20,13 +22,15 @@ def configure_report(request, report_slug: str):
     chosen_report = get_report_class(report_slug)
 
     if request.method == "POST":
+        main_form = ReportForm(request.user, request.POST)
         forms = {
             analysis.name: analysis.form_class(request.POST)
             for analysis in chosen_report.analyses
         }
 
-        if all(form.is_valid() for form in forms.values()):
-            report = Report(title="placeholder")
+        if all(form.is_valid() for form in forms.values()) and main_form.is_valid():
+            report_data = main_form.cleaned_data
+            report = Report(title=report_data["title"], author=request.user)
             report.save()
 
             data = {key: form.cleaned_data for key, form in forms.items()}
@@ -35,7 +39,12 @@ def configure_report(request, report_slug: str):
             }
 
             for key, analysis in analyses.items():
-                result = analysis.execute("", "", [], **data[key])
+                result = analysis.execute(
+                    report_data["qrel_file"],
+                    report_data["queries_file"],
+                    report_data["runs_files"],
+                    **data[key],
+                )
                 analysis_result = AnalysisResult(
                     report=report,
                     analysis_type=key,
@@ -53,13 +62,15 @@ def configure_report(request, report_slug: str):
             "analysis_forms": {
                 analysis.name: analysis.form_class
                 for analysis in chosen_report.analyses
-            }
+            },
+            "main_form": ReportForm(user=request.user),
         },
     )
 
 
 def view_report(request, report_id: str):
     report = get_object_or_404(Report, pk=report_id)
+    print()
     analysis_results = get_list_or_404(AnalysisResult, report=report)
     return render(
         request,
