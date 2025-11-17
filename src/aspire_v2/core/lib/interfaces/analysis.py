@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import ClassVar
 
 from .result import Result
+from resources.models import ResourceFile
 
 from django import forms
 
@@ -15,9 +16,9 @@ class Analysis(ABC):
     @abstractmethod
     def execute(
         self,
-        qrels_file: str,
-        queries_file: str,
-        retrieval_runs: list[str],
+        qrels_file: ResourceFile,
+        queries_file: ResourceFile,
+        retrieval_runs: list[ResourceFile],
         **parameters: dict,
     ) -> Result:
         """Execute the analysis."""

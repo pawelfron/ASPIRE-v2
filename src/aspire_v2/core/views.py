@@ -1,10 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404, get_list_or_404
+from django.http import Http404
 
 from .models import Report, AnalysisResult
+from resources.models import ResourceFile
 from .forms import ReportForm
 
 from .lib.utils import get_report_class, create_analysis
-from .lib.utils.mappings import REPORT_MAPPING
+from .lib.reports import all_reports
 
 
 def dashboard(request):
@@ -14,7 +16,7 @@ def dashboard(request):
 
 def list_reports(request):
     return render(
-        request, "core/report_list.html", {"report_list": list(REPORT_MAPPING.keys())}
+        request, "core/report_list.html", {"report_list": list(all_reports.keys())}
     )
 
 
@@ -38,12 +40,15 @@ def configure_report(request, report_slug: str):
                 key: create_analysis(form.prefix) for key, form in forms.items()
             }
 
+            qrel_file = get_object_or_404(ResourceFile, pk=report_data["qrel_file"])
+            queries_file = get_object_or_404(
+                ResourceFile, pk=report_data["queries_file"]
+            )
+            runs_files = get_list_or_404(ResourceFile, pk__in=report_data["runs_files"])
+
             for key, analysis in analyses.items():
                 result = analysis.execute(
-                    report_data["qrel_file"],
-                    report_data["queries_file"],
-                    report_data["runs_files"],
-                    **data[key],
+                    qrel_file, queries_file, runs_files, **data[key]
                 )
                 analysis_result = AnalysisResult(
                     report=report,
@@ -75,5 +80,14 @@ def view_report(request, report_id: str):
     return render(
         request,
         "core/report.html",
-        {"analysis_results": analysis_results, "title": report.title},
+        {"analysis_results": analysis_results, "report": report},
     )
+
+
+def delete_report(request, report_id: str):
+    if request.method == "POST":
+        try:
+            Report.objects.get(pk=report_id).delete()
+        except Report.DoesNotExist:
+            raise Http404
+    return redirect("dashboard")

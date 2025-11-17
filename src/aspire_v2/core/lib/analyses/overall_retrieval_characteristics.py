@@ -1,5 +1,6 @@
 from ..interfaces import Analysis, Result
 from ..results import ValueResult
+from resources.models import ResourceFile
 
 from django import forms
 
@@ -14,9 +15,9 @@ class OverallRetrievalCharacteristics(Analysis):
 
     def execute(
         self,
-        qrels_file: str,
-        queries_file: str,
-        retrieval_runs: list[str],
+        qrels_file: ResourceFile,
+        queries_file: ResourceFile,
+        retrieval_runs: list[ResourceFile],
         **parameters: dict,
     ) -> Result:
         return ValueResult(1)

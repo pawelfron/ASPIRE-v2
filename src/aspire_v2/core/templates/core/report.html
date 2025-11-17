@@ -1,4 +1,4 @@
-<h1>{{ title }}</h1>
+<h1>{{ report.title }}</h1>
 
 {% for analysis_result in analysis_results %}
     <div>
@@ -6,3 +6,10 @@
         {{ analysis_result.result }}
     </div>
 {% endfor %}
+
+<hr>
+
+<form action="{% url 'delete_report' report.id %}" method="POST">
+    {% csrf_token %}
+    <input type="submit" value="delete">
+</form>

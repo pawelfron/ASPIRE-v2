@@ -6,4 +6,7 @@ class ValueResult(Result):
         self.value = value
 
     def serialize(self):
-        return {"value": self.value}
+        return {
+            "type": "value",
+            "value": self.value,
+        }
