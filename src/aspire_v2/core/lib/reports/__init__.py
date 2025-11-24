@@ -1,10 +1,8 @@
-from .mock import MockReport
-from .mock2 import MockReport2
 from ..interfaces import Report
+from .retrieval_performance_report import RetrievalPerformanceReport
 
 all_reports: dict[str, type[Report]] = {
-    "mock1": MockReport,
-    "mock2": MockReport2,
+    "retrieval_performance": RetrievalPerformanceReport,
 }
 
 __all__ = [all_reports]

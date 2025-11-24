@@ -8,7 +8,11 @@ class TableResult(Result):
         self.dataframe = dataframe
 
     def serialize(self):
+        data = self.dataframe.to_dict("tight")
+        data["data_with_index"] = [
+            [index] + values for index, values in zip(data["index"], data["data"])
+        ]
         return {
             "type": "table",
-            "value": self.dataframe.to_dict("records"),
+            "value": data,
         }

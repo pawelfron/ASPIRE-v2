@@ -1,9 +1,61 @@
 <h1>{{ report.title }}</h1>
 
-{% for analysis_result in analysis_results %}
+{% for analysis_result in report.results.all %}
     <div>
-        {{ analysis_result.analysis_type }}
-        {{ analysis_result.result }}
+        {{analysis_result.analysis_type}}
+        {% if analysis_result.result.type == "value" %}
+            <b>{{ analysis_result.result.value }}</b>
+        {% elif analysis_result.result.type == "table" %}
+            <table>
+                <thead>
+                    <tr>
+                        <th></th>
+                        {% for column in analysis_result.result.value.columns %}
+                            <th>{{ column }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in analysis_result.result.value.data_with_index %}
+                        <tr>
+                            {% for value in row %}
+                                <td>{{ value }}</td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor%}
+                </tbody>
+            </table>
+        {% elif analysis_result.result.type == "plot" %}
+            <div id="plot {{analysis_result.analysis_type}}"></div>
+        {% elif analysis_result.result.type == "composite" %}
+            {% for label, subresult in analysis_result.result.value.items %}
+                {% if subresult.type == "value" %}
+                    <b>{{ subresult.value }}</b>
+                {% elif subresult.type == "table" %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th></th>
+                                {% for column in subresult.value.columns %}
+                                    <th>{{ column }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in subresult.value.data_with_index %}
+                                <tr>
+                                    {% for value in row %}
+                                        <td>{{ value }}</td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor%}
+                        </tbody>
+                    </table>
+                {% elif subresult.type == "plot" %}
+                    <div id="plot {{analysis_result.analysis_type}}-{{label}}"></div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
     </div>
 {% endfor %}
 
@@ -13,3 +65,14 @@
     {% csrf_token %}
     <input type="submit" value="delete">
 </form>
+
+<script src="https://cdn.plot.ly/plotly-3.3.0.min.js" charset="utf-8"></script>
+{{plot_data|json_script:'plot_data'}}
+<script>
+    const plotData = JSON.parse(document.getElementById('plot_data').textContent);
+
+    for (const [id, plot] of Object.entries(plotData)) {
+        const { data, layout } = plot.value;
+        Plotly.newPlot(`plot ${id}`, data, layout);
+    }
+</script>

@@ -1,24 +1,25 @@
 from abc import ABC, abstractmethod
 from typing import ClassVar
 
-from .result import Result
-from resources.models import ResourceFile
+import pandas as pd
+from django.forms import Form
 
-from django import forms
+from .result import Result
+from .analysis_form import AnalysisForm
 
 
 class Analysis(ABC):
     """Base class for all analyses."""
 
     name: ClassVar[str]
-    form_class: ClassVar[type[forms.Form]]
+    form_class: ClassVar[type[Form]]
 
     @abstractmethod
     def execute(
         self,
-        qrels_file: ResourceFile,
-        queries_file: ResourceFile,
-        retrieval_runs: list[ResourceFile],
+        qrels: pd.DataFrame,
+        queries: pd.DataFrame,
+        retrieval_runs: dict[str, pd.DataFrame],
         **parameters: dict,
     ) -> Result:
         """Execute the analysis."""

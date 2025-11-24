@@ -5,7 +5,13 @@ from .models import Report, AnalysisResult
 from resources.models import ResourceFile
 from .forms import ReportForm
 
-from .lib.utils import get_report_class, create_analysis
+from .lib.utils import (
+    get_report_class,
+    create_analysis,
+    load_qrel_file,
+    load_queries_file,
+    load_run_file,
+)
 from .lib.reports import all_reports
 
 
@@ -46,9 +52,18 @@ def configure_report(request, report_slug: str):
             )
             runs_files = get_list_or_404(ResourceFile, pk__in=report_data["runs_files"])
 
+            qrels = load_qrel_file(qrel_file)
+            queries = load_queries_file(queries_file)
+            retrieval_runs = {
+                run_file.file.name: load_run_file(run_file) for run_file in runs_files
+            }
+
             for key, analysis in analyses.items():
                 result = analysis.execute(
-                    qrel_file, queries_file, runs_files, **data[key]
+                    qrels=qrels,
+                    queries=queries,
+                    retrieval_runs=retrieval_runs,
+                    **data[key],
                 )
                 analysis_result = AnalysisResult(
                     report=report,
@@ -75,12 +90,19 @@ def configure_report(request, report_slug: str):
 
 def view_report(request, report_id: str):
     report = get_object_or_404(Report, pk=report_id)
-    print()
-    analysis_results = get_list_or_404(AnalysisResult, report=report)
+    plot_data = {}
+    for result in report.results.all():
+        data = result.result
+        if data["type"] == "plot":
+            plot_data[result.analysis_type] = data
+        elif data["type"] == "composite":
+            for label, sub_result in data["value"].items():
+                if sub_result["type"] == "plot":
+                    plot_data[f"{result.analysis_type}-{label}"] = sub_result
     return render(
         request,
         "core/report.html",
-        {"analysis_results": analysis_results, "report": report},
+        {"report": report, "plot_data": plot_data},
     )
 
 
