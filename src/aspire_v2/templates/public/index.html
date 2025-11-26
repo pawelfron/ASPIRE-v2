@@ -6,11 +6,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Index page</title>
-    <link href="{% static 'css/output.css' %}" rel="stylesheet">
+    {% comment %} <link href="{% static 'css/output.css' %}" rel="stylesheet"> {% endcomment %}
 </head>
 <body>
     <a class="btn" href="{% url 'login' %}">Login</a>
+    <br>
     <a class="btn" href="{% url 'signup' %}">Sign up</a>
+    <br>
 
     Lorem ipsum dolor sit amet consectetur adipisicing elit. Vero molestiae sed quasi, hic alias cupiditate voluptate aliquam numquam pariatur consectetur voluptatum quaerat, maiores quos minus, molestias inventore magnam perferendis tenetur?
 

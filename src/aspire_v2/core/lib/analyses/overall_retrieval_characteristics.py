@@ -1,5 +1,5 @@
 from ..interfaces import Analysis, Result, AnalysisForm
-from ..results import TableResult
+from ..results import TableResult, CompositeResult
 import pandas as pd
 from ir_measures import parse_measure, calc_aggregate
 
@@ -38,9 +38,69 @@ class OverallRetrievalCharacteristics(Analysis):
         for res in agg_result:
             clean_result = {}
             for measure in measures:
-                clean_result[str(measure)] = res[measure]
+                clean_result[str(measure)] = round(res[measure], 4)
             clean_results.append(clean_result)
 
-        result = pd.DataFrame(clean_results, index=retrieval_runs.keys())
+        overall_result = TableResult(
+            pd.DataFrame(clean_results, index=retrieval_runs.keys())
+        )
 
-        return TableResult(result)
+        # --
+
+        measure_names = {
+            "P@5": "",
+            "P@10": "",
+            "P@25": "",
+            "P@50": "",
+            "P@100": "",
+            "Rprec": "",
+        }
+        measures = [parse_measure(measure_name) for measure_name in measure_names]
+
+        agg_result = [
+            calc_aggregate(measures, qrels, retrieval_run)
+            for retrieval_run in retrieval_runs.values()
+        ]
+
+        clean_results = []
+        for res in agg_result:
+            clean_result = {}
+            for measure in measures:
+                clean_result[str(measure)] = round(res[measure], 4)
+            clean_results.append(clean_result)
+
+        precision_result = TableResult(
+            pd.DataFrame(clean_results, index=retrieval_runs.keys())
+        )
+
+        # --
+
+        measure_names = {
+            "P@50": "",
+            "P@100": "",
+        }
+        measures = [parse_measure(measure_name) for measure_name in measure_names]
+
+        agg_result = [
+            calc_aggregate(measures, qrels, retrieval_run)
+            for retrieval_run in retrieval_runs.values()
+        ]
+
+        clean_results = []
+        for res in agg_result:
+            clean_result = {}
+            for measure in measures:
+                clean_result[str(measure)] = round(res[measure], 4)
+            clean_results.append(clean_result)
+
+        recall_result = TableResult(
+            pd.DataFrame(clean_results, index=retrieval_runs.keys())
+        )
+
+        return CompositeResult(
+            {
+                "General Measures": overall_result,
+                "Precision Measures": precision_result,
+                "Recall Measures": recall_result,
+            }
+        )

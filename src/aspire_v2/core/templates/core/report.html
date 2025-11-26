@@ -2,7 +2,7 @@
 
 {% for analysis_result in report.results.all %}
     <div>
-        {{analysis_result.analysis_type}}
+        <h3>{{analysis_result.analysis_type}}</h3>
         {% if analysis_result.result.type == "value" %}
             <b>{{ analysis_result.result.value }}</b>
         {% elif analysis_result.result.type == "table" %}
@@ -29,6 +29,7 @@
             <div id="plot {{analysis_result.analysis_type}}"></div>
         {% elif analysis_result.result.type == "composite" %}
             {% for label, subresult in analysis_result.result.value.items %}
+                <h5>{{ label }}</h5>
                 {% if subresult.type == "value" %}
                     <b>{{ subresult.value }}</b>
                 {% elif subresult.type == "table" %}
