@@ -1,5 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404, get_list_or_404
 from django.http import Http404
+from django.urls import reverse_lazy
+from django.views.generic.list import ListView
+from django.views.generic.edit import DeleteView
 
 from .models import Report, AnalysisResult
 from resources.models import ResourceFile
@@ -15,9 +18,20 @@ from .lib.utils import (
 from .lib.reports import all_reports
 
 
-def dashboard(request):
-    reports = Report.objects.filter(author=request.user)
-    return render(request, "core/dashboard.html", {"reports": reports})
+class ReportListView(ListView):
+    model = Report
+    template_name = "core/dashboard.html"
+    context_object_name = "reports"
+    paginate_by = 20
+
+    def get_queryset(self):
+        return Report.objects.filter(author=self.request.user).order_by("-date")
+
+
+class ReportDeleteView(DeleteView):
+    model = Report
+    success_url = reverse_lazy("dashboard")
+    template_name = "core/report_confirm_delete.html"
 
 
 def list_reports(request):

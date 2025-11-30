@@ -1,0 +1,19 @@
+{% extends "base/base.html" %} {% block title %} Account - ASPIRE {% endblock %}
+<!---->
+{% block content %}
+<div>
+  <h1 class="text-3xl font-bold mb-3">Account details</h1>
+
+  <p class="mb-3">Email: <span class="badge badge-ghost">{{ user }}</span></p>
+  <p class="mb-3">
+    <a href="{% url 'password_change' %}" class="btn btn-neutral"
+      >Change password</a
+    >
+  </p>
+  <p class="mb-3">
+    <a href="{% url 'user_delete' user.id %}" class="btn btn-error"
+      >Delete account</a
+    >
+  </p>
+</div>
+{% endblock %}

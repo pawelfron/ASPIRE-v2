@@ -1,21 +1,44 @@
 {% extends "base/base.html" %}
 <!---->
-{% block title %} Dashboard {% endblock %}
+{% block title %} Dashboard - ASPIRE {% endblock %}
 <!---->
 {% block content %}
-<h1>MAIN</h1>
-
-<a href="/report">new report</a>
-
-<hr />
-
-{% for report in reports %}
 <div>
-  <a href="view_report/{{ report.id }}">{{ report.title }}</a>
+  <h1 class="text-3xl font-bold mb-3">Generated reports</h1>
+
+  <a href="{% url 'list_reports' %}" class="btn btn-success">New report</a>
+
+  <div class="flex flex-wrap gap-2 mt-5 mb-5">
+    {% for report in reports %}
+    <div class="card card-border bg-base-100 w-80">
+      <div class="card-body">
+        <h2 class="card-title">{{ report.title }}</h2>
+        <p class="font-light text-sm">{{ report.date }}</p>
+        <div class="card-actions justify-end">
+          <a href="{% url 'view_report' report.id %}" class="btn btn-primary">Open</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!---->
+  {% if is_paginated %}
+  <div class="join">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}" class="join-item btn">Previous</a>
+    {% else %}
+    <a href="#" class="join-item btn" disabled>Previous</a>
+    {% endif %}
+
+    <span class="join-item btn"> Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} </span>
+
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}" class="join-item btn">Next</a>
+    {% else %}
+    <a href="#" class="join-item btn" disabled>Next</a>
+    {% endif %}
+  </div>
+  {% endif %}
 </div>
-{% endfor %}
-
-<hr />
-
-<a href="{% url 'file_list' %}">View files</a>
 {% endblock %}

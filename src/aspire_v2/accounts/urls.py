@@ -9,7 +9,7 @@ from django.contrib.auth.views import (
     PasswordResetDoneView,
     PasswordResetView,
 )
-from .views import SignUpView
+from .views import SignUpView, UserDetailView, UserDeleteView
 
 
 urlpatterns = [
@@ -66,4 +66,6 @@ urlpatterns = [
         ),
         name="password_reset_complete",
     ),
+    path("<int:pk>", UserDetailView.as_view(), name="user_detail"),
+    path("confirm_delete/<int:pk>", UserDeleteView.as_view(), name="user_delete"),
 ]

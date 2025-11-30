@@ -1,8 +1,10 @@
-from django.contrib.auth import login
+from django.contrib.auth import login, get_user_model
 from django.urls import reverse_lazy
 from django.shortcuts import redirect
-from django.views.generic import CreateView
+from django.views.generic import CreateView, DeleteView, DetailView
 from .forms import CustomUserCreationForm
+
+User = get_user_model()
 
 
 class SignUpView(CreateView):
@@ -14,3 +16,15 @@ class SignUpView(CreateView):
         user = form.save()
         login(self.request, user)
         return redirect("index")
+
+
+class UserDetailView(DetailView):
+    model = User
+    template_name = "accounts/user_detail.html"
+    context_object_name = "object"
+
+
+class UserDeleteView(DeleteView):
+    model = User
+    success_url = reverse_lazy("index")
+    template_name = "accounts/user_delete_confirm.html"

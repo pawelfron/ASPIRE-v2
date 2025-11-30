@@ -27,7 +27,7 @@ class FileDetailView(DetailView):
 class FileListView(ListView):
     model = ResourceFile
     template_name = "resources/file_list.html"
-    context_object_name = "objects"
+    context_object_name = "files"
     paginate_by = 20
 
     def get_queryset(self):
