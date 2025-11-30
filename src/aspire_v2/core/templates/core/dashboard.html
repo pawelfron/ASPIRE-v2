@@ -1,15 +1,21 @@
+{% extends "base/base.html" %}
+<!---->
+{% block title %} Dashboard {% endblock %}
+<!---->
+{% block content %}
 <h1>MAIN</h1>
 
 <a href="/report">new report</a>
 
-<hr>
+<hr />
 
 {% for report in reports %}
-    <div>
-        <a href="view_report/{{ report.id }}">{{ report.title }}</a>
-    </div>
+<div>
+  <a href="view_report/{{ report.id }}">{{ report.title }}</a>
+</div>
 {% endfor %}
 
-<hr>
+<hr />
 
 <a href="{% url 'file_list' %}">View files</a>
+{% endblock %}

@@ -1,9 +1,45 @@
-<h2>Login</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <input type="submit" value="Login">
-</form>
+{% extends 'base/auth.html' %}
+<!---->
+{% block title %} Log in - ASPIRE {% endblock %}
+<!---->
+{% block content %}
+<div>
+  <div class="text-lg mb-5 divider">Log in</div>
+  <form method="post" class="mb-2 mr-auto ml-auto block w-80">
+    {% csrf_token %} {% for field in form %}
+    <label for="{{ field.id_for_label }}" class="label"
+      >{{ field.label }}</label
+    >
+    {{ field|add_class:"input" }} {% if field.help_text %}
+    <p class="label">{{ field.help_text }}</p>
+    {% endif %}
 
-<a href="{% url 'password_reset' %}">Reset password</a>
-<a href="{% url 'signup' %}">Sign up</a>
+    <ul class="list max-w-80 text-error">
+      {% for error in field.errors %}
+      <li class="list-row text-sm p-1">{{ error }}</li>
+      {% endfor %}
+    </ul>
+    {% endfor %}
+
+    <ul class="list max-w-80 text-error">
+      {% for error in form.non_field_errors %}
+      <li class="list-row text-sm p-1">{{ error }}</li>
+      {% endfor %}
+    </ul>
+
+    <input
+      type="submit"
+      value="Log in"
+      class="btn btn-primary w-40 block mr-auto ml-auto mb-3 mt-4"
+    />
+  </form>
+
+  <div class="flex justify-center items-center">
+    <a href="{% url 'password_reset' %}" class="btn btn-ghost w-40"
+      >Reset password</a
+    >
+    <span class="font-light block text-xl">|</span>
+    <a href="{% url 'signup' %}" class="btn btn-ghost w-40">Sign up</a>
+  </div>
+</div>
+{% endblock %}

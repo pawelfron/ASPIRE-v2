@@ -1,8 +1,42 @@
-<h2>Sign Up</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <input type="submit" value="Sign Up">
-</form>
+{% extends 'base/auth.html' %}
+<!---->
+{% block title %} Sign up - ASPIRE {% endblock %}
+<!---->
+{% block content %}
+<div>
+  <div class="text-lg mb-5 divider">Sign up</div>
+  <form method="post" class="mb-2 block ml-auto mr-auto w-80">
+    {% csrf_token %} {% for field in form %}
 
-<a href="{% url 'login' %}">Login</a>
+    <label for="{{ field.id_for_label }}" class="label"
+      >{{ field.label }}</label
+    >
+    {{ field|add_class:"input" }} {% if field.help_text %}
+    <p class="label">{{ field.help_text }}</p>
+    {% endif %}
+
+    <ul class="list max-w-80 text-error">
+      {% for error in field.errors %}
+      <li class="list-row text-sm p-1">{{ error }}</li>
+      {% endfor %}
+    </ul>
+    {% endfor %}
+
+    <ul class="list max-w-80 text-error">
+      {% for error in form.non_field_errors %}
+      <li class="list-row text-sm p-1">{{ error }}</li>
+      {% endfor %}
+    </ul>
+
+    <input
+      type="submit"
+      value="Sign up"
+      class="btn btn-primary w-40 block mr-auto ml-auto mb-3 mt-4"
+    />
+  </form>
+
+  <div class="flex justify-center items-center">
+    <a href="{% url 'login' %}" class="btn btn-ghost w-40">Log in</a>
+  </div>
+</div>
+{% endblock %}

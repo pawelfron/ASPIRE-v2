@@ -69,6 +69,9 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ],
+            "builtins": [
+                "core.templatetags.add_class",
+            ],
         },
     },
 ]
@@ -140,6 +143,7 @@ AUTH_USER_MODEL = "accounts.User"
 
 LOGIN_REDIRECT_URL = "/dashboard"
 LOGIN_URL = "/accounts/login"
+LOGOUT_REDIRECT_URL = "/"
 
 # for testing
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"

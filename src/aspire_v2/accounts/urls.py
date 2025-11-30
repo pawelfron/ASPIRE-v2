@@ -21,7 +21,7 @@ urlpatterns = [
     ),
     path(
         "logout/",
-        LogoutView.as_view(template_name="accounts/logged_out.html"),
+        LogoutView.as_view(),
         name="logout",
     ),
     path(
