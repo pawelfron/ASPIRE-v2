@@ -17,7 +17,7 @@
 
   {% for analysis_result in report.results.all %}
   <div class="mb-5">
-    <h3 class="font-semibold text-lg">{{analysis_result.analysis_type}}</h3>
+    <h3 class="font-semibold text-lg">{{analysis_result.analysis_display_name}}</h3>
     {% if analysis_result.result.type == "value" %}
     <b>{{ analysis_result.result.value }}</b>
     {% elif analysis_result.result.type == "table" %}

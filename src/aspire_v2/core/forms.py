@@ -51,24 +51,38 @@ class RetrievalRunUploadForm(forms.ModelForm):
         self.fields["ir_task"].choices = [(task.id, task.title) for task in tasks]
 
 
-# class NewReportGeneralForm(forms.Form):
-#     title = forms.CharField(max_length=100)
-#     description = forms.Textarea(max_length=500)
-#     report_type = forms.ChoiceField(
-#         choices=[(slug, name) for slug, name in all_reports.items()]
-#     )
-#     task = forms.ChoiceField(choices=[])
+class NewReportGeneralForm(forms.Form):
+    title = forms.CharField(label="Title", max_length=100)
+    description = forms.CharField(
+        label="Description", max_length=500, widget=forms.Textarea()
+    )
+    report_type = forms.ChoiceField(
+        label="Report type",
+        choices=[
+            (slug, report_class.name) for slug, report_class in all_reports.items()
+        ],
+        widget=forms.RadioSelect({"class": "radio"}),
+    )
+    task = forms.ModelChoiceField(
+        label="Retrieval task", queryset=RetrievalTask.objects.none()
+    )
 
-#     def __init__(self, user, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         tasks = RetrievalTask.objects.filter(author=user)
-#         self.fields["task"].choices = [(task.id, task.title) for task in tasks]
+    def __init__(self, user, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["task"].queryset = RetrievalTask.objects.filter(
+            author=user
+        ).order_by("-date")
 
 
-# class NewReportRunsForm(forms.Form):
-#     runs = forms.MultipleChoiceField(label="Retrieval runs", choices=[])
+class NewReportRunsForm(forms.Form):
+    runs = forms.ModelMultipleChoiceField(
+        label="Retrieval runs",
+        queryset=RetrievalRun.objects.none(),
+        widget=forms.CheckboxSelectMultiple({"class": "checkbox"}),
+    )
 
-#     def __init__(self, task, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         runs = RetrievalRun.objects.filter(ir_task=task)
-#         self.fields["runs"].choices = [(run.id, run.title) for run in runs]
+    def __init__(self, task, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["runs"].queryset = RetrievalRun.objects.filter(
+            ir_task=task
+        ).order_by("-date")

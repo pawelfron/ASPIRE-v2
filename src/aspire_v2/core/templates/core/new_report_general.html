@@ -1,11 +1,11 @@
 {% extends 'base/base.html' %}
 <!---->
-{% block title %} Upload retrieval run - ASPIRE {% endblock %}
+{% block title %} New report - ASPIRE {% endblock %}
 <!---->
 {% block content %}
 <div>
-  <h1 class="text-3xl font-bold mb-3">Upload retrieval run</h1>
-  <form method="post" enctype="multipart/form-data" class="block">
+  <h1 class="text-3xl font-bold mb-3">Create new report</h1>
+  <form method="POST">
     {% csrf_token %}
     <div class="mb-3">
       <label for="{{ form.title.id_for_label }}" class="label block">{{ form.title.label }}</label>
@@ -34,26 +34,28 @@
     </div>
 
     <div class="mb-3">
-      <label for="{{ form.ir_task.id_for_label }}" class="label block">{{ form.ir_task.label }}</label>
-      {{ form.ir_task|add_class:"select" }} {% if form.ir_task.help_text %}
-      <p class="label">{{ form.ir_task.help_text }}</p>
+      <label for="{{ form.task.id_for_label }}" class="label block">{{ form.task.label }}</label>
+      {{ form.task|add_class:"select" }} {% if form.task.help_text %}
+      <p class="label">{{ form.task.help_text }}</p>
       {% endif %}
 
       <ul class="list max-w-80 text-error">
-        {% for error in form.ir_task.errors %}
+        {% for error in form.task.errors %}
         <li class="list-row text-sm p-1">{{ error }}</li>
         {% endfor %}
       </ul>
     </div>
 
     <div class="mb-3">
-      <label for="{{ form.file.id_for_label }}" class="label block">{{ form.file.label }}</label>
-      {{ form.file|add_class:"file-input" }} {% if form.file.help_text %}
-      <p class="label">{{ form.file.help_text }}</p>
-      {% endif %}
+      <fieldset class="fieldset rounded-box border border-base-200 w-80 p-4">
+        <legend class="fieldset-legend">{{ form.report_type.label }}</legend>
+        {% for radio in form.report_type %}
+        <label for="{{ radio.id_for_label }}"> {{ radio.tag }} {{ radio.choice_label }} </label>
+        {% endfor %}
+      </fieldset>
 
       <ul class="list max-w-80 text-error">
-        {% for error in form.file.errors %}
+        {% for error in form.task.errors %}
         <li class="list-row text-sm p-1">{{ error }}</li>
         {% endfor %}
       </ul>
@@ -65,7 +67,11 @@
       {% endfor %}
     </ul>
 
-    <input type="submit" value="Upload" class="btn btn-success" />
+    <div class="flex justify-between w-80">
+      <a href="#" class="btn btn-secondary" disabled>Previous</a>
+      <a href="{% url 'new_report_cancel' %}" class="btn btn-error">Cancel</a>
+      <input type="submit" value="Next" class="btn btn-primary" />
+    </div>
   </form>
 </div>
 {% endblock %}

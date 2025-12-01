@@ -6,7 +6,13 @@ from django.views.generic.edit import CreateView, DeleteView
 
 from .models import Report, AnalysisResult, RetrievalRun, RetrievalTask
 from resources.models import ResourceFile
-from .forms import ReportForm, RetrievalTaskUploadForm, RetrievalRunUploadForm
+from .forms import (
+    ReportForm,
+    RetrievalTaskUploadForm,
+    RetrievalRunUploadForm,
+    NewReportGeneralForm,
+    NewReportRunsForm,
+)
 
 from .lib.utils import (
     get_report_class,
@@ -15,6 +21,7 @@ from .lib.utils import (
     load_queries_file,
     load_run_file,
 )
+from .lib.utils import data_loaders_v2
 from .lib.reports import all_reports
 
 
@@ -36,7 +43,129 @@ class ReportDeleteView(DeleteView):
 
 def new_report_general(request):
     if request.method == "POST":
+        form = NewReportGeneralForm(request.user, request.POST)
+        if form.is_valid():
+            request.session["new_report"] = {
+                "title": form.cleaned_data["title"],
+                "description": form.cleaned_data["description"],
+                "report_type": form.cleaned_data["report_type"],
+                "retrieval_task_id": str(form.cleaned_data["task"].id),
+            }
+            return redirect("new_report_runs")
+    else:
+        form = NewReportGeneralForm(request.user)
+
+    return render(request, "core/new_report_general.html", {"form": form})
+
+
+def new_report_runs(request):
+    if (new_report := request.session.get("new_report")) is None:
+        return redirect("new_report_general")
+
+    retrieval_task = get_object_or_404(
+        RetrievalTask,
+        pk=new_report["retrieval_task_id"],
+    )
+
+    if request.method == "POST":
+        form = NewReportRunsForm(retrieval_task, request.POST)
+        if form.is_valid():
+            request.session["new_report"]["retrieval_run_ids"] = [
+                str(run.id) for run in form.cleaned_data["runs"]
+            ]
+            request.session.modified = True
+            return redirect("new_report_parameters")
+    else:
+        form = NewReportRunsForm(retrieval_task)
+
+    return render(
+        request,
+        "core/new_report_runs.html",
+        {"form": form, "new_report": new_report, "retrieval_task": retrieval_task},
+    )
+
+
+def new_report_parameters(request):
+    if (new_report := request.session.get("new_report")) is None:
+        return redirect("new_report_general")
+
+    if "retrieval_run_ids" not in new_report:
+        return redirect("new_report_runs")
+
+    if (report_class := all_reports.get(new_report["report_type"])) is None:
         pass
+
+    analysis_forms = {
+        analysis.form_class.prefix: analysis.form_class
+        for analysis in report_class.analyses
+    }
+
+    if request.method == "POST":
+        parameters = {}
+        all_valid = True
+        for name, form_class in analysis_forms.items():
+            form = form_class(request.POST)
+            if form.is_valid():
+                parameters[name] = form.cleaned_data
+            else:
+                all_valid = False
+                break
+
+        if all_valid:
+            retrieval_task = get_object_or_404(
+                RetrievalTask, pk=new_report["retrieval_task_id"]
+            )
+            retrieval_runs = get_list_or_404(
+                RetrievalRun, pk__in=new_report["retrieval_run_ids"]
+            )
+            report = Report.objects.create(
+                title=new_report["title"],
+                description=new_report["description"],
+                report_type=new_report["report_type"],
+                author=request.user,
+            )
+            report.retrieval_runs.set(retrieval_runs)
+
+            qrels = data_loaders_v2.load_qrel_file(retrieval_task)
+            queries = data_loaders_v2.load_queries_file(retrieval_task)
+            runs = {
+                run.file.name: data_loaders_v2.load_run_file(run)
+                for run in retrieval_runs
+            }
+
+            for analysis_name, analysis_parameters in parameters.items():
+                analysis = create_analysis(analysis_name)
+
+                result = analysis.execute(
+                    qrels=qrels,
+                    queries=queries,
+                    retrieval_runs=runs,
+                    **analysis_parameters,
+                )
+
+                AnalysisResult.objects.create(
+                    report=report,
+                    analysis_type=analysis_name,
+                    parameters=analysis_parameters,
+                    result=result.serialize(),
+                )
+
+            del request.session["new_report"]
+            return redirect("view_report", report_id=report.id)
+
+    forms = {name: form_class() for name, form_class in analysis_forms.items()}
+
+    return render(
+        request,
+        "core/new_report_parameters.html",
+        {"forms": forms, "new_report": new_report, "report_class": report_class},
+    )
+
+
+def new_report_cancel(request):
+    if "new_report" in request.session:
+        del request.session["new_report"]
+    return redirect("dashboard")
 
 
 def list_reports(request):

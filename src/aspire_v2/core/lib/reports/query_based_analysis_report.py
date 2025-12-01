@@ -2,8 +2,8 @@ from ..interfaces import Report
 from ..analyses import OverallRetrievalCharacteristics, PrecisionRecallCurve
 
 
-class RetrievalPerformanceReport(Report):
-    name = "Retrieval Performance Evaluation"
+class QueryBasedAnalysisReport(Report):
+    name = "Query-based Analysis"
     analyses = [
         OverallRetrievalCharacteristics,
         PrecisionRecallCurve,

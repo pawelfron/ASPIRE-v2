@@ -6,7 +6,7 @@
 <div>
   <h1 class="text-3xl font-bold mb-3">Generated reports</h1>
 
-  <a href="{% url 'list_reports' %}" class="btn btn-success">New report</a>
+  <a href="{% url 'new_report_general' %}" class="btn btn-success">New report</a>
 
   <div class="flex flex-wrap gap-2 mt-5 mb-5">
     {% for report in reports %}

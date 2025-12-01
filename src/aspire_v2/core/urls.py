@@ -5,6 +5,10 @@ from .views import (
     list_reports,
     view_report,
     ReportListView,
+    new_report_general,
+    new_report_runs,
+    new_report_parameters,
+    new_report_cancel,
     ReportDeleteView,
     RetrievalTaskListView,
     RetrievalTaskDetailView,
@@ -19,6 +23,10 @@ from .views import (
 
 urlpatterns = [
     path("dashboard", ReportListView.as_view(), name="dashboard"),
+    path("new_report_general", new_report_general, name="new_report_general"),
+    path("new_report_runs", new_report_runs, name="new_report_runs"),
+    path("new_report_parameters", new_report_parameters, name="new_report_parameters"),
+    path("new_report_cancel", new_report_cancel, name="new_report_cancel"),
     path("report", list_reports, name="list_reports"),
     path("report/<slug:report_slug>", configure_report, name="new_report"),
     path("view_report/<uuid:report_id>", view_report, name="view_report"),

@@ -1,0 +1,38 @@
+{% extends 'base/base.html' %}
+<!---->
+{% block title %} New report - ASPIRE {% endblock %}
+<!---->
+{% block content %}
+<div>
+  <h1 class="text-3xl font-bold mb-3">Create new report - set parameters</h1>
+  <form method="POST">
+    {% csrf_token %} {% for key, form in forms.items %}
+    <div class="fieldset rounded-box border border-base-200 w-80 p-4 mb-3">
+      <h3 class="text-xl font-semibold">{{ key }}</h3>
+      <div>
+        {% for field in form %}
+        <div class="mb-1">
+          <label for="{{ field.id_for_label }}" class="label block">{{ field.label }}</label>
+          {{ field}} {% if field.help_text %}
+          <p class="label">{{ field.help_text }}</p>
+          {% endif %}
+
+          <ul class="list max-w-80 text-error">
+            {% for error in field.errors %}
+            <li class="list-row text-sm p-1">{{ error }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+
+    <div class="flex justify-between w-80">
+      <a href="{% url 'new_report_runs' %}" class="btn btn-secondary">Previous</a>
+      <a href="{% url 'new_report_cancel' %}" class="btn btn-error">Cancel</a>
+      <input type="submit" value="Next" class="btn btn-primary" />
+    </div>
+  </form>
+</div>
+{% endblock %}
