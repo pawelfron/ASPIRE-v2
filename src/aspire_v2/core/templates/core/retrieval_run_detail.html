@@ -1,0 +1,12 @@
+{% extends "base/base.html" %}
+<!---->
+{% block title %} {{ run.title }} - ASPIRE {% endblock %}
+<!---->
+{% block content %}
+<div>
+  <h1 class="text-3xl font-bold mb-3">{{ run.title }}</h1>
+  <p>{{ run.description }}</p>
+  <p class="font-light text-sm mb-5">Uploaded at: {{ run.date }}</p>
+  <a href="{% url 'retrieval_run_delete' object.id %}" class="btn btn-error">Delete</a>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base/base.html" %}
+<!---->
+{% block title %} Retrieval runs - ASPIRE {% endblock %}
+<!---->
+{% block content %}
+<div>
+  <h1 class="text-3xl font-bold mb-3">Retrieval runs</h1>
+
+  <a href="{% url 'retrieval_run_upload' %}" class="btn btn-success">Upload</a>
+
+  <div class="flex flex-wrap gap-2 mt-5 mb-5">
+    {% for run in runs %}
+    <div class="card card-border bg-base-100 w-80">
+      <div class="card-body">
+        <h2 class="card-title">{{ run.title }}</h2>
+        <p>{{ run.description }}</p>
+        <p class="font-light text-sm">{{ run.date }}</p>
+        <div class="card-actions justify-end">
+          <a href="{% url 'retrieval_run_detail' run.id %}" class="btn btn-primary">Details</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% include 'includes/pagination.html' %}
+</div>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base/base.html" %}
+<!---->
+{% block title %} {{ task.title }} - ASPIRE {% endblock %}
+<!---->
+{% block content %}
+<div>
+  <h1 class="text-3xl font-bold mb-3">{{ task.title }}</h1>
+  <p>{{ task.description }}</p>
+  <p class="font-light text-sm mb-5">Uploaded at: {{ task.date }}</p>
+  <a href="{% url 'retrieval_task_delete' object.id %}" class="btn btn-error">Delete</a>
+</div>
+{% endblock %}

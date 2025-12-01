@@ -1,0 +1,71 @@
+{% extends 'base/base.html' %}
+<!---->
+{% block title %} Create retrieval task - ASPIRE {% endblock %}
+<!---->
+{% block content %}
+<div>
+  <h1 class="text-3xl font-bold mb-3">Create retrieval task</h1>
+  <form method="post" enctype="multipart/form-data" class="block">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="{{ form.title.id_for_label }}" class="label block">{{ form.title.label }}</label>
+      {{ form.title|add_class:"input" }} {% if form.title.help_text %}
+      <p class="label">{{ form.title.help_text }}</p>
+      {% endif %}
+
+      <ul class="list max-w-80 text-error">
+        {% for error in form.title.errors %}
+        <li class="list-row text-sm p-1">{{ error }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="mb-3">
+      <label for="{{ form.description.id_for_label }}" class="label block">{{ form.description.label }}</label>
+      {{ form.description|add_class:"textarea h-32" }} {% if form.description.help_text %}
+      <p class="label">{{ form.description.help_text }}</p>
+      {% endif %}
+
+      <ul class="list max-w-80 text-error">
+        {% for error in form.description.errors %}
+        <li class="list-row text-sm p-1">{{ error }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="mb-3">
+      <label for="{{ form.qrels.id_for_label }}" class="label block">{{ form.qrels.label }}</label>
+      {{ form.qrels|add_class:"file-input" }} {% if form.qrels.help_text %}
+      <p class="label">{{ form.qrels.help_text }}</p>
+      {% endif %}
+
+      <ul class="list max-w-80 text-error">
+        {% for error in form.qrels.errors %}
+        <li class="list-row text-sm p-1">{{ error }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="mb-3">
+      <label for="{{ form.topics.id_for_label }}" class="label block">{{ form.topics.label }}</label>
+      {{ form.topics|add_class:"file-input" }} {% if form.topics.help_text %}
+      <p class="label">{{ form.topics.help_text }}</p>
+      {% endif %}
+
+      <ul class="list max-w-80 text-error">
+        {% for error in form.topics.errors %}
+        <li class="list-row text-sm p-1">{{ error }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <ul class="list max-w-80 text-error">
+      {% for error in form.non_field_errors %}
+      <li class="list-row text-sm p-1">{{ error }}</li>
+      {% endfor %}
+    </ul>
+
+    <input type="submit" value="Create" class="btn btn-success" />
+  </form>
+</div>
+{% endblock %}

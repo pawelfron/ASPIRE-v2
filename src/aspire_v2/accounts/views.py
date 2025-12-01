@@ -9,7 +9,7 @@ User = get_user_model()
 
 class SignUpView(CreateView):
     form_class = CustomUserCreationForm
-    success_url = reverse_lazy("index")
+    success_url = reverse_lazy("dashboard")
     template_name = "accounts/signup.html"
 
     def form_valid(self, form):

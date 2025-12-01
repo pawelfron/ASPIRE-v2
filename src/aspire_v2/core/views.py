@@ -1,12 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404, get_list_or_404
-from django.http import Http404
 from django.urls import reverse_lazy
 from django.views.generic.list import ListView
-from django.views.generic.edit import DeleteView
+from django.views.generic.detail import DetailView
+from django.views.generic.edit import CreateView, DeleteView
 
-from .models import Report, AnalysisResult
+from .models import Report, AnalysisResult, RetrievalRun, RetrievalTask
 from resources.models import ResourceFile
-from .forms import ReportForm
+from .forms import ReportForm, RetrievalTaskUploadForm, RetrievalRunUploadForm
 
 from .lib.utils import (
     get_report_class,
@@ -22,7 +22,7 @@ class ReportListView(ListView):
     model = Report
     template_name = "core/dashboard.html"
     context_object_name = "reports"
-    paginate_by = 20
+    paginate_by = 60
 
     def get_queryset(self):
         return Report.objects.filter(author=self.request.user).order_by("-date")
@@ -32,6 +32,11 @@ class ReportDeleteView(DeleteView):
     model = Report
     success_url = reverse_lazy("dashboard")
     template_name = "core/report_confirm_delete.html"
+
+
+def new_report_general(request):
+    if request.method == "POST":
+        pass
 
 
 def list_reports(request):
@@ -120,10 +125,72 @@ def view_report(request, report_id: str):
     )
 
 
-def delete_report(request, report_id: str):
-    if request.method == "POST":
-        try:
-            Report.objects.get(pk=report_id).delete()
-        except Report.DoesNotExist:
-            raise Http404
-    return redirect("dashboard")
+class RetrievalTaskListView(ListView):
+    model = RetrievalTask
+    template_name = "core/retrieval_task_list.html"
+    context_object_name = "tasks"
+    paginate_by = 60
+
+    def get_queryset(self):
+        return RetrievalTask.objects.filter(author=self.request.user).order_by("-date")
+
+
+class RetrievalTaskDetailView(DetailView):
+    model = RetrievalTask
+    template_name = "core/retrieval_task_detail.html"
+    context_object_name = "task"
+
+
+class RetrievalTaskUploadView(CreateView):
+    model = RetrievalTask
+    form_class = RetrievalTaskUploadForm
+    template_name = "core/retrieval_task_upload.html"
+    success_url = reverse_lazy("retrieval_task_list")
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        return super().form_valid(form)
+
+
+class RetrievalTaskDeleteView(DeleteView):
+    model = RetrievalTask
+    success_url = reverse_lazy("retrieval_task_list")
+    template_name = "core/retrieval_task_confirm_delete.html"
+    context_object_name = "task"
+
+
+class RetrievalRunListView(ListView):
+    model = RetrievalRun
+    template_name = "core/retrieval_run_list.html"
+    context_object_name = "runs"
+    paginate_by = 60
+
+    def get_queryset(self):
+        return RetrievalRun.objects.filter(ir_task__author=self.request.user).order_by(
+            "-date"
+        )
+
+
+class RetrievalRunDetailView(DetailView):
+    model = RetrievalRun
+    template_name = "core/retrieval_run_detail.html"
+    context_object_name = "run"
+
+
+class RetrievalRunUploadView(CreateView):
+    model = RetrievalRun
+    form_class = RetrievalRunUploadForm
+    template_name = "core/retrieval_run_upload.html"
+    success_url = reverse_lazy("retrieval_run_list")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+
+class RetrievalRunDeleteView(DeleteView):
+    model = RetrievalRun
+    success_url = reverse_lazy("retrieval_run_list")
+    template_name = "core/retrieval_run_confirm_delete.html"
+    context_object_name = "run"
