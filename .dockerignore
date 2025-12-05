@@ -1,0 +1,11 @@
+.git
+.gitignore
+.vscode
+.idea
+__pycache__
+*.pyc
+node_modules
+.venv
+venv
+static/css
+static/js

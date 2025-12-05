@@ -32,8 +32,8 @@ class RetrievalTask(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=100)
     description = models.TextField(max_length=500)
-    qrels = models.FileField(upload_to="res")
-    topics = models.FileField(upload_to="res")
+    qrels = models.FileField(upload_to="qrels")
+    topics = models.FileField(upload_to="topics")
     date = models.DateField(auto_now_add=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="ir_tasks")
 
@@ -45,7 +45,7 @@ class RetrievalRun(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=100)
     description = models.TextField(max_length=500)
-    file = models.FileField(upload_to="res")
+    file = models.FileField(upload_to="runs")
     date = models.DateField(auto_now_add=True)
     ir_task = models.ForeignKey(
         RetrievalTask, on_delete=models.CASCADE, related_name="retrieval_runs"
