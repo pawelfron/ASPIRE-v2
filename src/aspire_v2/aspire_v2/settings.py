@@ -33,12 +33,14 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "channels",
     "core",
     "accounts",
 ]
@@ -98,7 +100,7 @@ DATABASES = {
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": f"redis://{os.getenv('REDIS_HOST')}:{os.getenv('REDIS_PORT')}/{os.getenv('REDIS_DB')}",
+        "LOCATION": f"redis://{os.getenv('REDIS_SESSIONS_HOST')}:{os.getenv('REDIS_SESSIONS_PORT')}/{os.getenv('REDIS_SESSIONS_DB')}",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
@@ -178,6 +180,28 @@ STORAGES = {
     "staticfiles": {
         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
         "OPTIONS": {},
+    },
+}
+
+
+# Celery config
+
+CELERY_BROKER_URL = f"amqp://{os.getenv('RABBITMQ_USER')}:{os.getenv('RABBITMQ_PASS')}@{os.getenv('RABBITMQ_HOST')}:{os.getenv('RABBITMQ_PORT')}//"
+CELERY_BACKEND_URL = f"redis://{os.getenv('REDIS_RESULTS_HOST')}:{os.getenv('REDIS_RESULTS_PORT')}/{os.getenv('REDIS_RESULTS_DB')}"
+
+
+# Channels config
+
+ASGI_APPLICATION = "aspire_v2.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [
+                (os.getenv("REDIS_SESSIONS_HOST"), os.getenv("REDIS_SESSIONS_PORT"))
+            ],
+        },
     },
 }
 

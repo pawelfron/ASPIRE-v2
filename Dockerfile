@@ -1,10 +1,10 @@
 FROM python:3.13-slim-bookworm
 
-WORKDIR /app
-
 RUN apt update && \
     apt install -y npm postgresql-client && \
     apt clean
+
+WORKDIR /app
 
 COPY pyproject.toml /app/
 RUN pip install --no-cache-dir .

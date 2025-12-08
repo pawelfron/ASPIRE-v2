@@ -1,6 +1,6 @@
 from ..interfaces import Analysis, Result, AnalysisForm
 from ..results import PlotResult
-import pandas as pd
+from ...models import RetrievalRun, RetrievalTask
 import plotly.graph_objects as go
 from ir_measures import parse_measure, calc_aggregate
 
@@ -17,9 +17,8 @@ class PrecisionRecallCurve(Analysis):
 
     def execute(
         self,
-        qrels: pd.DataFrame,
-        queries: pd.DataFrame,
-        retrieval_runs: dict[str, pd.DataFrame],
+        retrieval_task: RetrievalTask,
+        retrieval_runs: list[RetrievalRun],
         **parameters: dict,
     ) -> Result:
         relevance_threshold = 1
@@ -27,9 +26,11 @@ class PrecisionRecallCurve(Analysis):
 
         measure_names = [f"IPrec(rel={relevance_threshold})@{cutoff}" for cutoff in x]
         measures = [parse_measure(measure_name) for measure_name in measure_names]
+
+        qrels = retrieval_task.qrels_dataframe
+        runs_dfs = {run.title: run.dataframe for run in retrieval_runs}
         agg_result = {
-            name: calc_aggregate(measures, qrels, retrieval_run)
-            for name, retrieval_run in retrieval_runs.items()
+            name: calc_aggregate(measures, qrels, df) for name, df in runs_dfs.items()
         }
 
         precisions = {

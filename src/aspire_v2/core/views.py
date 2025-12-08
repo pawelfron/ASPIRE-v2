@@ -3,7 +3,10 @@ from django.urls import reverse_lazy
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, DeleteView
+from django.template.loader import render_to_string
+import pdfkit
 
+from .tasks import create_report
 from .models import Report, AnalysisResult, RetrievalRun, RetrievalTask
 from .forms import (
     RetrievalTaskUploadForm,
@@ -106,46 +109,22 @@ def new_report_parameters(request):
                 break
 
         if all_valid:
-            retrieval_task = get_object_or_404(
-                RetrievalTask, pk=new_report["retrieval_task_id"]
-            )
-            retrieval_runs = get_list_or_404(
-                RetrievalRun, pk__in=new_report["retrieval_run_ids"]
-            )
             report = Report.objects.create(
                 title=new_report["title"],
                 description=new_report["description"],
                 report_type=new_report["report_type"],
                 author=request.user,
             )
-            report.retrieval_runs.set(retrieval_runs)
 
-            qrels = data_loaders_v2.load_qrel_file(retrieval_task)
-            queries = data_loaders_v2.load_queries_file(retrieval_task)
-            runs = {
-                run.file.name: data_loaders_v2.load_run_file(run)
-                for run in retrieval_runs
-            }
-
-            for analysis_name, analysis_parameters in parameters.items():
-                analysis = create_analysis(analysis_name)
-
-                result = analysis.execute(
-                    qrels=qrels,
-                    queries=queries,
-                    retrieval_runs=runs,
-                    **analysis_parameters,
-                )
-
-                AnalysisResult.objects.create(
-                    report=report,
-                    analysis_type=analysis_name,
-                    parameters=analysis_parameters,
-                    result=result.serialize(),
-                )
+            create_report.delay_on_commit(
+                report_id=report.id,
+                retrieval_task_id=new_report["retrieval_task_id"],
+                retrieval_run_ids=new_report["retrieval_run_ids"],
+                parameters=parameters,
+            )
 
             del request.session["new_report"]
-            return redirect("view_report", report_id=report.id)
+            return redirect("report_status", report_id=report.id)
 
     forms = {name: form_class() for name, form_class in analysis_forms.items()}
 
@@ -160,6 +139,15 @@ def new_report_cancel(request):
     if "new_report" in request.session:
         del request.session["new_report"]
     return redirect("dashboard")
+
+
+def report_status(request, report_id):
+    report = get_object_or_404(Report, pk=report_id)
+    return render(
+        request,
+        "core/report_status.html",
+        {"report": report},
+    )
 
 
 def view_report(request, report_id: str):
@@ -178,6 +166,26 @@ def view_report(request, report_id: str):
         "core/report.html",
         {"report": report, "plot_data": plot_data},
     )
+
+
+def generate_pdf(request, report_id: str):
+    if request.method == "POST":
+        report = get_object_or_404(Report, pk=report_id)
+        plot_data = {}
+        for result in report.results.all():
+            data = result.result
+            if data["type"] == "plot":
+                plot_data[result.analysis_type] = data
+            elif data["type"] == "composite":
+                for label, sub_result in data["value"].items():
+                    if sub_result["type"] == "plot":
+                        plot_data[f"{result.analysis_type}-{label}"] = sub_result
+
+        report_html = render_to_string(
+            "core/report_pdf.html",
+            {"report": report, "plot_data": plot_data},
+        )
+        pdf = pdfkit.from_string(report_html, False)
 
 
 class RetrievalTaskListView(ListView):

@@ -1,7 +1,9 @@
 #!/bin/bash
 set -e
 
-python src/aspire_v2/manage.py migrate
-python src/aspire_v2/manage.py init_minio
+cd src/aspire_v2
 
-exec python src/aspire_v2/manage.py runserver 0.0.0.0:8000
+python manage.py migrate
+python manage.py init_minio
+
+exec python manage.py runserver 0.0.0.0:8000

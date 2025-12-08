@@ -13,16 +13,6 @@ services:
       timeout: 5s
       retries: 5
 
-  redis_sessions:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   minio:
     image: minio/minio
     ports:
@@ -38,6 +28,40 @@ services:
       timeout: 5s
       retries: 5
 
+  redis_sessions:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis_results:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=aspire_v2
+      - RABBITMQ_DEFAULT_PASS=aspire_v2_password
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   server:
     build: .
     command: ./docker-entrypoint.sh
@@ -46,7 +70,25 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      minio:
+        condition: service_healthy
       redis_sessions:
         condition: service_healthy
+      redis_results:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  worker:
+    build: .
+    working_dir: /app/src/aspire_v2
+    command: celery -A aspire_v2 worker -l INFO
+    depends_on:
+      db:
+        condition: service_healthy
       minio:
+        condition: service_healthy
+      redis_results:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy

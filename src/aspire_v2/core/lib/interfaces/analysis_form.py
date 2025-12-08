@@ -1,14 +1,13 @@
 from django.forms import Form
-import pandas as pd
+from ...models import RetrievalTask, RetrievalRun
 
 
 class AnalysisForm(Form):
     def __init__(
         self,
-        qrels: pd.DataFrame,
-        queries: pd.DataFrame,
-        retrieval_runs: dict[str, pd.DataFrame],
         *args,
+        retrieval_task: RetrievalTask,
+        retrieval_runs: list[RetrievalRun],
         **kwargs,
     ):
         super().__init__(*args, **kwargs)

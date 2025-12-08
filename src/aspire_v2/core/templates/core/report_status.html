@@ -1,0 +1,29 @@
+{% extends "base/base.html" %}
+<!---->
+{% block title %} {{ report.title }} - ASPIRE {% endblock %}
+<!---->
+{% block content %}
+<div class="max-w-3/4">
+  <progress id="progress-bar" class="progress w-80 ml-auto mr-auto" value="0" max="100"></progress>
+</div>
+{% endblock %}
+<!---->
+{% block scripts%}
+<!---->
+{{ report.id|json_script:"report_id" }}
+<script>
+  const reportId = JSON.parse(document.getElementById('report_id').textContent);
+  const progressBar = document.getElementById('progress-bar');
+
+  const socket = new WebSocket(`/ws/report_status/${reportId}/`);
+  socket.addEventListener('message', (event) => {
+    const data = JSON.parse(event.data);
+
+    if (data.type == 'analysis_complete') {
+      progressBar.setAttribute('value', 100 * (data.progress / data.total));
+    } else if (data.type == 'report_complete') {
+      window.location.href = "{% url 'view_report' report.id %}";
+    }
+  });
+</script>
+{% endblock %}

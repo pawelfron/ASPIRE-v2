@@ -1,9 +1,12 @@
 from django.db import models
+from django.utils.functional import cached_property
 from accounts.models import User
+import numpy as np
+import pandas as pd
 
 import uuid
 
-from .lib.analyses import all_analyses
+# from .lib.analyses import all_analyses
 
 
 class Report(models.Model):
@@ -23,9 +26,9 @@ class AnalysisResult(models.Model):
     date = models.DateTimeField(auto_now_add=True)
     result = models.JSONField()
 
-    @property
-    def analysis_display_name(self):
-        return all_analyses[self.analysis_type].name
+    # @property
+    # def analysis_display_name(self):
+    #     return all_analyses[self.analysis_type].name
 
 
 class RetrievalTask(models.Model):
@@ -39,6 +42,21 @@ class RetrievalTask(models.Model):
 
     def __str__(self):
         return self.title
+
+    @cached_property
+    def qrels_dataframe(self) -> pd.DataFrame:
+        with self.qrels.open("rb") as f:
+            return pd.read_csv(
+                f,
+                sep=" ",
+                names=["query_id", "iteration", "doc_id", "relevance"],
+                dtype={
+                    "query_id": "object",
+                    "iteration": "object",
+                    "doc_id": "object",
+                    "relevance": np.int32,
+                },
+            )
 
 
 class RetrievalRun(models.Model):
@@ -54,3 +72,29 @@ class RetrievalRun(models.Model):
 
     def __str__(self):
         return self.title
+
+    @cached_property
+    def dataframe(self) -> pd.DataFrame:
+        with self.file.open("rb") as f:
+            return pd.read_csv(
+                f,
+                sep="\t",
+                names=["query_id", "iteration", "doc_id", "rank", "score", "tag"],
+                dtype={
+                    "query_id": "object",
+                    "iteration": "object",
+                    "doc_id": "object",
+                    "rank": np.int32,
+                    "score": np.float64,
+                    "tag": "object",
+                },
+            )
+
+
+class MeasureValue(models.Model):
+    pk = models.CompositePrimaryKey("retrieval_run", "measure_name")
+    retrieval_run = models.ForeignKey(
+        RetrievalRun, on_delete=models.CASCADE, related_name="measures"
+    )
+    measure_name = models.CharField(max_length=100)
+    value = models.FloatField()

@@ -1,0 +1,99 @@
+{% load static %}
+<!DOCTYPE html>
+
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="{% static 'css/output.css' %}" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="max-w-3/4 ml-auto mr-auto">
+      <div class="flex justify-between">
+        <div>
+          <h1 class="text-3xl font-bold mb-3">{{ report.title }}</h1>
+          <p class="font-light text-sm mb-5">{{ report.date }}</p>
+        </div>
+
+        <div>
+          <a href="{% url 'report_delete' report.id %}" class="btn btn-error">Delete</a>
+        </div>
+      </div>
+
+      {% for analysis_result in report.results.all %}
+      <div class="mb-5">
+        <h3 class="font-semibold text-lg">{{analysis_result.analysis_display_name}}</h3>
+        {% if analysis_result.result.type == "value" %}
+        <b>{{ analysis_result.result.value }}</b>
+        {% elif analysis_result.result.type == "table" %}
+        <div class="overflow-x-auto rounded-box border border-base-content/5">
+          <table class="table">
+            <thead>
+              <tr class="bg-base-200">
+                <th></th>
+                {% for column in analysis_result.result.value.columns %}
+                <th>{{ column }}</th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in analysis_result.result.value.data_with_index %}
+              <tr>
+                {% for value in row %}
+                <td>{{ value }}</td>
+                {% endfor %}
+              </tr>
+              {% endfor%}
+            </tbody>
+          </table>
+        </div>
+        {% elif analysis_result.result.type == "plot" %}
+        <div id="plot {{analysis_result.analysis_type}}"></div>
+        {% elif analysis_result.result.type == "composite" %} {% for label, subresult in analysis_result.result.value.items %}
+        <div class="mb-3">
+          <h5 class="font-semibold">{{ label }}</h5>
+          {% if subresult.type == "value" %}
+          <b>{{ subresult.value }}</b>
+          {% elif subresult.type == "table" %}
+          <div class="overflow-x-auto rounded-box border border-base-content/5">
+            <table class="table">
+              <thead>
+                <tr class="bg-base-200">
+                  <th></th>
+                  {% for column in subresult.value.columns %}
+                  <th>{{ column }}</th>
+                  {% endfor %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in subresult.value.data_with_index %}
+                <tr>
+                  {% for value in row %}
+                  <td>{{ value }}</td>
+                  {% endfor %}
+                </tr>
+                {% endfor%}
+              </tbody>
+            </table>
+          </div>
+          {% elif subresult.type == "plot" %}
+          <div id="plot {{analysis_result.analysis_type}}-{{label}}"></div>
+          {% endif %}
+        </div>
+        {% endfor %} {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+
+    <script src="https://cdn.plot.ly/plotly-3.3.0.min.js" charset="utf-8"></script>
+    {{plot_data|json_script:'plot_data'}}
+    <script>
+      const plotData = JSON.parse(document.getElementById('plot_data').textContent);
+
+      for (const [id, plot] of Object.entries(plotData)) {
+        const { data, layout } = plot.value;
+        Plotly.newPlot(`plot ${id}`, data, layout);
+      }
+    </script>
+  </body>
+</html>
