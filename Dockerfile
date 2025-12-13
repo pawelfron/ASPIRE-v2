@@ -8,6 +8,7 @@ WORKDIR /app
 
 COPY pyproject.toml /app/
 RUN pip install --no-cache-dir .
+RUN playwright install --with-deps chromium
 
 COPY src/ /app/src/
 RUN cd src/aspire_v2/frontend && \

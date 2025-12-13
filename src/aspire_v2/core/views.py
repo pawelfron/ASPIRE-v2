@@ -3,11 +3,10 @@ from django.urls import reverse_lazy
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, DeleteView
-from django.template.loader import render_to_string
-import pdfkit
+from django.http import FileResponse
 
-from .tasks import create_report
-from .models import Report, AnalysisResult, RetrievalRun, RetrievalTask
+from .tasks import create_report, generate_pdf
+from .models import Report, RetrievalRun, RetrievalTask
 from .forms import (
     RetrievalTaskUploadForm,
     RetrievalRunUploadForm,
@@ -15,10 +14,6 @@ from .forms import (
     NewReportRunsForm,
 )
 
-from .lib.utils import (
-    create_analysis,
-)
-from .lib.utils import data_loaders_v2
 from .lib.reports import all_reports
 
 
@@ -126,7 +121,16 @@ def new_report_parameters(request):
             del request.session["new_report"]
             return redirect("report_status", report_id=report.id)
 
-    forms = {name: form_class() for name, form_class in analysis_forms.items()}
+    retrieval_task = get_object_or_404(
+        RetrievalTask, pk=new_report["retrieval_task_id"]
+    )
+    retrieval_runs = get_list_or_404(
+        RetrievalRun, pk__in=new_report["retrieval_run_ids"]
+    )
+    forms = {
+        name: form_class(retrieval_task=retrieval_task, retrieval_runs=retrieval_runs)
+        for name, form_class in analysis_forms.items()
+    }
 
     return render(
         request,
@@ -168,24 +172,23 @@ def view_report(request, report_id: str):
     )
 
 
-def generate_pdf(request, report_id: str):
+def generate_pdf_view(request, report_id: str):
     if request.method == "POST":
-        report = get_object_or_404(Report, pk=report_id)
-        plot_data = {}
-        for result in report.results.all():
-            data = result.result
-            if data["type"] == "plot":
-                plot_data[result.analysis_type] = data
-            elif data["type"] == "composite":
-                for label, sub_result in data["value"].items():
-                    if sub_result["type"] == "plot":
-                        plot_data[f"{result.analysis_type}-{label}"] = sub_result
+        generate_pdf.delay(report_id)
+        return redirect("dashboard")
 
-        report_html = render_to_string(
-            "core/report_pdf.html",
-            {"report": report, "plot_data": plot_data},
-        )
-        pdf = pdfkit.from_string(report_html, False)
+
+def download_pdf(request, report_id: str):
+    report = get_object_or_404(Report, pk=report_id)
+
+    response = FileResponse(
+        report.pdf.open("rb"),
+        content_type="application/pdf",
+        as_attachment=True,
+        filename=f"{report.title}.pdf",
+    )
+
+    return response
 
 
 class RetrievalTaskListView(ListView):

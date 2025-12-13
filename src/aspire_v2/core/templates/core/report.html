@@ -13,6 +13,16 @@
     <div>
       <a href="{% url 'report_delete' report.id %}" class="btn btn-error">Delete</a>
     </div>
+    <div>
+      {% if report.pdf %}
+      <a href="{% url 'download_pdf' report.id %}" class="btn btn-accent">Download PDF</a>
+      {% else %}
+      <form action="{% url 'generate_pdf' report.id %}" method="POST">
+        {% csrf_token %}
+        <input type="submit" class="btn btn-error" value="pdf" />
+      </form>
+      {% endif %}
+    </div>
   </div>
 
   {% for analysis_result in report.results.all %}

@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.functional import cached_property
+from django.contrib.postgres.fields import ArrayField
 from accounts.models import User
 import numpy as np
 import pandas as pd
@@ -16,6 +17,7 @@ class Report(models.Model):
     report_type = models.CharField(max_length=100)
     date = models.DateTimeField(auto_now_add=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="reports")
+    pdf = models.FileField(upload_to="pdfs", null=True)
 
 
 class AnalysisResult(models.Model):

@@ -1,6 +1,9 @@
 from celery import shared_task
 from django.shortcuts import get_list_or_404, get_object_or_404
 from django.contrib.auth import get_user_model
+from django.template.loader import render_to_string
+from django.core.files.base import ContentFile
+from playwright.sync_api import sync_playwright
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
@@ -58,3 +61,37 @@ def create_report(
     )
 
     return "Completed"
+
+
+@shared_task
+def generate_pdf(report_id: str):
+    report = get_object_or_404(Report, pk=report_id)
+    plot_data = {}
+    for result in report.results.all():
+        data = result.result
+        if data["type"] == "plot":
+            plot_data[result.analysis_type] = data
+        elif data["type"] == "composite":
+            for label, sub_result in data["value"].items():
+                if sub_result["type"] == "plot":
+                    plot_data[f"{result.analysis_type}-{label}"] = sub_result
+
+    with open("/app/src/aspire_v2/static/css/output.css", "r") as f:
+        css_content = f.read()
+
+    report_html = render_to_string(
+        "core/report_pdf.html",
+        {"report": report, "plot_data": plot_data, "css_content": css_content},
+    )
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page()
+        page.set_content(report_html)
+        page.wait_for_timeout(2000)
+        pdf_bytes = page.pdf(format="A4", print_background=True)
+        browser.close()
+
+    report.pdf.save(f"report_{report_id}.pdf", ContentFile(pdf_bytes), save=True)
+
+    return "Generated"

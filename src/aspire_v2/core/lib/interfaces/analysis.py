@@ -12,7 +12,7 @@ class Analysis(ABC):
     """Base class for all analyses."""
 
     name: ClassVar[str]
-    form_class: ClassVar[type[Form]]
+    form_class: ClassVar[type[AnalysisForm]]
 
     @abstractmethod
     def execute(

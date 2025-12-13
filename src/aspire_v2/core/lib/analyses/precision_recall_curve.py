@@ -7,8 +7,31 @@ from ir_measures import parse_measure, calc_aggregate
 from django import forms
 
 
-class PrecisionRecallCurveForm(forms.Form):
+class PrecisionRecallCurveForm(AnalysisForm):
     prefix = "precision_recall_curve"
+
+    relevance_threshold = forms.IntegerField(min_value=1)
+
+    def __init__(self, *args, retrieval_task=None, retrieval_runs=None, **kwargs):
+        super().__init__(
+            *args,
+            retrieval_task=retrieval_task,
+            retrieval_runs=retrieval_runs,
+            **kwargs,
+        )
+
+        if retrieval_task and retrieval_runs:
+            max_relevance = retrieval_task.qrels_dataframe["relevance"].max()
+            self.fields["relevance_threshold"].max_value = max_relevance
+            self.fields["relevance_threshold"].widget = forms.NumberInput(
+                attrs={
+                    "type": "range",
+                    "step": "1",
+                    "min": "1",
+                    "max": max_relevance,
+                }
+            )
+            self.fields["relevance_threshold"].disabled = max_relevance == 1
 
 
 class PrecisionRecallCurve(Analysis):
@@ -21,7 +44,7 @@ class PrecisionRecallCurve(Analysis):
         retrieval_runs: list[RetrievalRun],
         **parameters: dict,
     ) -> Result:
-        relevance_threshold = 1
+        relevance_threshold = parameters["relevance_threshold"]
         x = [i / 10.0 for i in range(11)]
 
         measure_names = [f"IPrec(rel={relevance_threshold})@{cutoff}" for cutoff in x]

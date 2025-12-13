@@ -8,6 +8,8 @@ from .views import (
     new_report_parameters,
     new_report_cancel,
     report_status,
+    generate_pdf_view,
+    download_pdf,
     ReportDeleteView,
     RetrievalTaskListView,
     RetrievalTaskDetailView,
@@ -29,6 +31,8 @@ urlpatterns = [
     path("view_report/<uuid:report_id>", view_report, name="view_report"),
     path("report_status/<uuid:report_id>", report_status, name="report_status"),
     path("confirm_delete/<uuid:pk>", ReportDeleteView.as_view(), name="report_delete"),
+    path("view_report/<uuid:report_id>/pdf", generate_pdf_view, name="generate_pdf"),
+    path("view_report/<uuid:report_id>/download", download_pdf, name="download_pdf"),
     path("tasks", RetrievalTaskListView.as_view(), name="retrieval_task_list"),
     path(
         "tasks/<uuid:pk>",
