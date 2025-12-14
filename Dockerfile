@@ -10,6 +10,8 @@ COPY pyproject.toml /app/
 RUN pip install --no-cache-dir .
 RUN playwright install --with-deps chromium
 
+RUN pip install watchdog
+
 COPY src/ /app/src/
 RUN cd src/aspire_v2/frontend && \
     npm install && \

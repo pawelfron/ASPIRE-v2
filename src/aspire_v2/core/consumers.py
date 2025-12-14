@@ -40,3 +40,33 @@ class ReportGenerationConsumer(AsyncJsonWebsocketConsumer):
             },
             close=True,
         )
+
+
+class PdfGenerationConsumer(AsyncJsonWebsocketConsumer):
+    async def connect(self):
+        self.report_id = self.scope["url_route"]["kwargs"]["report_id"]
+        self.room_group_name = f"pdf.{self.report_id}"
+
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+
+        await self.accept()
+
+    async def disconnect(self, code):
+        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+
+    async def pdf_complete(self, event):
+        await self.send_json(
+            {
+                "type": "pdf_complete",
+            },
+            close=True,
+        )
+
+    async def pdf_error(self, event):
+        await self.send_json(
+            {
+                "type": "pdf_error",
+                "error": event["error"],
+            },
+            close=True,
+        )

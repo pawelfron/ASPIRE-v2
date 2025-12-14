@@ -10,18 +10,15 @@
       <p class="font-light text-sm mb-5">{{ report.date }}</p>
     </div>
 
-    <div>
-      <a href="{% url 'report_delete' report.id %}" class="btn btn-error">Delete</a>
-    </div>
-    <div>
-      {% if report.pdf %}
-      <a href="{% url 'download_pdf' report.id %}" class="btn btn-accent">Download PDF</a>
-      {% else %}
-      <form action="{% url 'generate_pdf' report.id %}" method="POST">
+    <div class="flex flex-row gap-2">
+      <a id="pdf-download" href="{% url 'download_pdf' report.id %}" class="btn btn-accent {% if not report.pdf %} hidden {% endif %}"
+        >Download PDF</a
+      >
+      <form id="pdf-generate" method="POST" class="{% if report.pdf or pdf_is_generating %} hidden {% endif %}">
         {% csrf_token %}
-        <input type="submit" class="btn btn-error" value="pdf" />
+        <input type="submit" class="btn btn-accent" value="Generate PDF" />
       </form>
-      {% endif %}
+      <a href="{% url 'report_delete' report.id %}" class="btn btn-error">Delete</a>
     </div>
   </div>
 
@@ -93,7 +90,7 @@
 <!---->
 {% block scripts%}
 <script src="https://cdn.plot.ly/plotly-3.3.0.min.js" charset="utf-8"></script>
-{{plot_data|json_script:'plot_data'}}
+{{ plot_data|json_script:'plot_data' }} {{ report.id|json_script:"report_id" }}
 <script>
   const plotData = JSON.parse(document.getElementById('plot_data').textContent);
 
@@ -102,4 +99,20 @@
     Plotly.newPlot(`plot ${id}`, data, layout);
   }
 </script>
-{% endblock %}
+{% if pdf_is_generating %}
+<script>
+  const reportId = JSON.parse(document.getElementById('report_id').textContent);
+  const pdfDownload = document.getElementById('pdf-download');
+  const pdfGenerate = document.getElementById('pdf-generate');
+
+  const socket = new WebSocket(`/ws/pdf_status/${reportId}/`);
+  socket.addEventListener('message', (event) => {
+    const data = JSON.parse(event.data);
+    console.log(data);
+    if (data.type == 'pdf_complete') {
+      pdfGenerate.classList.add('hidden');
+      pdfDownload.classList.remove('hidden');
+    }
+  });
+</script>
+{% endif %} {% endblock %}

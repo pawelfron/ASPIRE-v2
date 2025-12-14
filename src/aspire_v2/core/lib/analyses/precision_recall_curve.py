@@ -2,7 +2,8 @@ from ..interfaces import Analysis, Result, AnalysisForm
 from ..results import PlotResult
 from ...models import RetrievalRun, RetrievalTask
 import plotly.graph_objects as go
-from ir_measures import parse_measure, calc_aggregate
+from ..utils.measure_calculation import get_aggregate_measure
+from ..measures import InterpolatedPrecisionAtRecallCutoff
 
 from django import forms
 
@@ -47,24 +48,20 @@ class PrecisionRecallCurve(Analysis):
         relevance_threshold = parameters["relevance_threshold"]
         x = [i / 10.0 for i in range(11)]
 
-        measure_names = [f"IPrec(rel={relevance_threshold})@{cutoff}" for cutoff in x]
-        measures = [parse_measure(measure_name) for measure_name in measure_names]
-
-        qrels = retrieval_task.qrels_dataframe
-        runs_dfs = {run.title: run.dataframe for run in retrieval_runs}
-        agg_result = {
-            name: calc_aggregate(measures, qrels, df) for name, df in runs_dfs.items()
-        }
-
-        precisions = {
-            name: [res[measure] for measure in measures]
-            for name, res in agg_result.items()
-        }
-
         fig = go.Figure()
-
-        for name, y in precisions.items():
-            fig.add_trace(go.Scatter(x=x, y=y, mode="lines+markers", name=name))
+        for retrieval_run in retrieval_runs:
+            y = [
+                get_aggregate_measure(
+                    retrieval_run,
+                    InterpolatedPrecisionAtRecallCutoff(
+                        rel=relevance_threshold, recall=recall, judged_only=True
+                    ),
+                )
+                for recall in x
+            ]
+            fig.add_trace(
+                go.Scatter(x=x, y=y, mode="lines+markers", name=retrieval_run.title)
+            )
 
         fig.update_layout(
             title="Precision/Recall Curve",

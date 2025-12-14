@@ -54,9 +54,7 @@ class AlphaNDCG(Measure):
 class AveragePrecision(Measure):
     display_name = "Average Precision"
 
-    def __init__(
-        self, *, rel: int, cutoff: int, alpha: float, judged_only: bool
-    ) -> None:
+    def __init__(self, *, rel: int, cutoff: int, judged_only: bool) -> None:
         self.rel = rel
         self.cutoff = cutoff
         self.judged_only = judged_only
@@ -128,7 +126,7 @@ class NumberOfRelevantDocuments(Measure):
 
 
 class NumberOfResults(Measure):
-    display_name = "Numbe of Results"
+    display_name = "Number of Results"
 
     def __init__(self, *, rel: int) -> None:
         self.rel = rel
@@ -136,3 +134,74 @@ class NumberOfResults(Measure):
     @property
     def measure_name(self) -> str:
         return f"NumRet(rel={self.rel})"
+
+
+class InterpolatedPrecisionAtRecallCutoff(Measure):
+    display_name = "Interpolated Precision at given recall cutoff"
+
+    def __init__(self, *, rel: int, recall: float, judged_only: bool):
+        self.rel = rel
+        self.recall = recall
+        self.judged_only = judged_only
+
+    @property
+    def measure_name(self) -> str:
+        return f"IPrec(rel={self.rel},judged_only={self.judged_only})@{self.recall}"
+
+
+class PercentageOfRelevantDocsInCutoff(Measure):
+    display_name = "Percentage of relevant documents in top cutoff results"
+
+    def __init__(self, *, rel: int, cutoff: float, judged_only: bool):
+        self.rel = rel
+        self.cutoff = cutoff
+        self.judged_only = judged_only
+
+    @property
+    def measure_name(self) -> str:
+        return f"P(rel={self.rel},judged_only={self.judged_only})@{self.cutoff}"
+
+
+class nDCG(Measure):
+    display_name = "nDCG"
+
+    def __init__(
+        self,
+        *,
+        cutoff: int,
+        judged_only: bool,
+        dcg: str,
+    ) -> None:
+        self.cutoff = cutoff
+        self.judged_only = judged_only
+        self.dcg = dcg
+
+    @property
+    def measure_name(self) -> str:
+        return f"nDCG(dcg='{self.dcg}',judged_only={self.judged_only})@{self.cutoff}"
+
+
+class Recall(Measure):
+    display_name = "Recall at cutoff"
+
+    def __init__(self, *, rel: int, cutoff: float, judged_only: bool):
+        self.rel = rel
+        self.cutoff = cutoff
+        self.judged_only = judged_only
+
+    @property
+    def measure_name(self) -> str:
+        return f"R(rel={self.rel},judged_only={self.judged_only})@{self.cutoff}"
+
+
+class MeanReciprocalRank(Measure):
+    display_name = "Mean Reciprocal Rank"
+
+    def __init__(self, *, rel: int, cutoff: float, judged_only: bool):
+        self.rel = rel
+        self.cutoff = cutoff
+        self.judged_only = judged_only
+
+    @property
+    def measure_name(self) -> str:
+        return f"RR(rel={self.rel},judged_only={self.judged_only})"

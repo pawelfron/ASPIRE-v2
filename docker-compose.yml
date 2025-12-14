@@ -1,6 +1,7 @@
 services:
   db:
     image: postgres:15
+    restart: unless-stopped
     environment:
       - POSTGRES_DB=aspire_db
       - POSTGRES_USER=aspire_user
@@ -15,6 +16,7 @@ services:
 
   minio:
     image: minio/minio
+    restart: unless-stopped
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -30,6 +32,7 @@ services:
 
   redis_sessions:
     image: redis:7-alpine
+    restart: unless-stopped
     ports:
       - "6379:6379"
     healthcheck:
@@ -40,6 +43,7 @@ services:
 
   redis_results:
     image: redis:7-alpine
+    restart: unless-stopped
     ports:
       - "6380:6379"
     healthcheck:
@@ -50,6 +54,7 @@ services:
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
+    restart: unless-stopped
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -67,6 +72,8 @@ services:
     command: ./docker-entrypoint.sh
     ports:
       - "8000:8000"
+    volumes:
+      - .:/app
     depends_on:
       db:
         condition: service_healthy
@@ -82,7 +89,9 @@ services:
   worker:
     build: .
     working_dir: /app/src/aspire_v2
-    command: celery -A aspire_v2 worker -l INFO
+    command: watchmedo auto-restart --directory=/app/src --pattern=*.py --recursive -- celery -A aspire_v2 worker -l INFO
+    volumes:
+      - .:/app
     depends_on:
       db:
         condition: service_healthy

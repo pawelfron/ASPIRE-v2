@@ -3,6 +3,8 @@ from django.urls import reverse_lazy
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, DeleteView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
 from django.http import FileResponse
 
 from .tasks import create_report, generate_pdf
@@ -17,7 +19,7 @@ from .forms import (
 from .lib.reports import all_reports
 
 
-class ReportListView(ListView):
+class ReportListView(LoginRequiredMixin, ListView):
     model = Report
     template_name = "core/dashboard.html"
     context_object_name = "reports"
@@ -27,12 +29,13 @@ class ReportListView(ListView):
         return Report.objects.filter(author=self.request.user).order_by("-date")
 
 
-class ReportDeleteView(DeleteView):
+class ReportDeleteView(LoginRequiredMixin, DeleteView):
     model = Report
     success_url = reverse_lazy("dashboard")
     template_name = "core/report_confirm_delete.html"
 
 
+@login_required
 def new_report_general(request):
     if request.method == "POST":
         form = NewReportGeneralForm(request.user, request.POST)
@@ -50,6 +53,7 @@ def new_report_general(request):
     return render(request, "core/new_report_general.html", {"form": form})
 
 
+@login_required
 def new_report_runs(request):
     if (new_report := request.session.get("new_report")) is None:
         return redirect("new_report_general")
@@ -77,6 +81,7 @@ def new_report_runs(request):
     )
 
 
+@login_required
 def new_report_parameters(request):
     if (new_report := request.session.get("new_report")) is None:
         return redirect("new_report_general")
@@ -87,6 +92,13 @@ def new_report_parameters(request):
     if (report_class := all_reports.get(new_report["report_type"])) is None:
         pass
 
+    retrieval_task = get_object_or_404(
+        RetrievalTask, pk=new_report["retrieval_task_id"]
+    )
+    retrieval_runs = get_list_or_404(
+        RetrievalRun, pk__in=new_report["retrieval_run_ids"]
+    )
+
     analysis_forms = {
         analysis.form_class.prefix: analysis.form_class
         for analysis in report_class.analyses
@@ -96,7 +108,11 @@ def new_report_parameters(request):
         parameters = {}
         all_valid = True
         for name, form_class in analysis_forms.items():
-            form = form_class(request.POST)
+            form = form_class(
+                request.POST,
+                retrieval_task=retrieval_task,
+                retrieval_runs=retrieval_runs,
+            )
             if form.is_valid():
                 parameters[name] = form.cleaned_data
             else:
@@ -121,12 +137,6 @@ def new_report_parameters(request):
             del request.session["new_report"]
             return redirect("report_status", report_id=report.id)
 
-    retrieval_task = get_object_or_404(
-        RetrievalTask, pk=new_report["retrieval_task_id"]
-    )
-    retrieval_runs = get_list_or_404(
-        RetrievalRun, pk__in=new_report["retrieval_run_ids"]
-    )
     forms = {
         name: form_class(retrieval_task=retrieval_task, retrieval_runs=retrieval_runs)
         for name, form_class in analysis_forms.items()
@@ -139,12 +149,14 @@ def new_report_parameters(request):
     )
 
 
+@login_required
 def new_report_cancel(request):
     if "new_report" in request.session:
         del request.session["new_report"]
     return redirect("dashboard")
 
 
+@login_required
 def report_status(request, report_id):
     report = get_object_or_404(Report, pk=report_id)
     return render(
@@ -154,6 +166,7 @@ def report_status(request, report_id):
     )
 
 
+@login_required
 def view_report(request, report_id: str):
     report = get_object_or_404(Report, pk=report_id)
     plot_data = {}
@@ -165,19 +178,38 @@ def view_report(request, report_id: str):
             for label, sub_result in data["value"].items():
                 if sub_result["type"] == "plot":
                     plot_data[f"{result.analysis_type}-{label}"] = sub_result
+    if request.method == "POST" and not report.pdf:
+        generate_pdf.delay(report_id)
+        return render(
+            request,
+            "core/report.html",
+            {
+                "report": report,
+                "plot_data": plot_data,
+                "pdf_is_generating": True,
+            },
+        )
+
     return render(
         request,
         "core/report.html",
-        {"report": report, "plot_data": plot_data},
+        {
+            "report": report,
+            "plot_data": plot_data,
+            "pdf_is_generating": False,
+        },
     )
 
 
-def generate_pdf_view(request, report_id: str):
-    if request.method == "POST":
-        generate_pdf.delay(report_id)
-        return redirect("dashboard")
+# def generate_pdf_view(request, report_id: str):
+#     if request.method == "POST":
+#         generate_pdf.delay(report_id)
+#         return redirect(
+#             "view_report", report_id=report_id, kwargs={"pdf_is_generating": True}
+#         )
 
 
+@login_required
 def download_pdf(request, report_id: str):
     report = get_object_or_404(Report, pk=report_id)
 
@@ -191,7 +223,7 @@ def download_pdf(request, report_id: str):
     return response
 
 
-class RetrievalTaskListView(ListView):
+class RetrievalTaskListView(LoginRequiredMixin, ListView):
     model = RetrievalTask
     template_name = "core/retrieval_task_list.html"
     context_object_name = "tasks"
@@ -201,13 +233,13 @@ class RetrievalTaskListView(ListView):
         return RetrievalTask.objects.filter(author=self.request.user).order_by("-date")
 
 
-class RetrievalTaskDetailView(DetailView):
+class RetrievalTaskDetailView(LoginRequiredMixin, DetailView):
     model = RetrievalTask
     template_name = "core/retrieval_task_detail.html"
     context_object_name = "task"
 
 
-class RetrievalTaskUploadView(CreateView):
+class RetrievalTaskUploadView(LoginRequiredMixin, CreateView):
     model = RetrievalTask
     form_class = RetrievalTaskUploadForm
     template_name = "core/retrieval_task_upload.html"
@@ -218,14 +250,14 @@ class RetrievalTaskUploadView(CreateView):
         return super().form_valid(form)
 
 
-class RetrievalTaskDeleteView(DeleteView):
+class RetrievalTaskDeleteView(LoginRequiredMixin, DeleteView):
     model = RetrievalTask
     success_url = reverse_lazy("retrieval_task_list")
     template_name = "core/retrieval_task_confirm_delete.html"
     context_object_name = "task"
 
 
-class RetrievalRunListView(ListView):
+class RetrievalRunListView(LoginRequiredMixin, ListView):
     model = RetrievalRun
     template_name = "core/retrieval_run_list.html"
     context_object_name = "runs"
@@ -237,13 +269,13 @@ class RetrievalRunListView(ListView):
         )
 
 
-class RetrievalRunDetailView(DetailView):
+class RetrievalRunDetailView(LoginRequiredMixin, DetailView):
     model = RetrievalRun
     template_name = "core/retrieval_run_detail.html"
     context_object_name = "run"
 
 
-class RetrievalRunUploadView(CreateView):
+class RetrievalRunUploadView(LoginRequiredMixin, CreateView):
     model = RetrievalRun
     form_class = RetrievalRunUploadForm
     template_name = "core/retrieval_run_upload.html"
@@ -255,7 +287,7 @@ class RetrievalRunUploadView(CreateView):
         return kwargs
 
 
-class RetrievalRunDeleteView(DeleteView):
+class RetrievalRunDeleteView(LoginRequiredMixin, DeleteView):
     model = RetrievalRun
     success_url = reverse_lazy("retrieval_run_list")
     template_name = "core/retrieval_run_confirm_delete.html"

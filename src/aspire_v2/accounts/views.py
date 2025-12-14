@@ -2,6 +2,7 @@ from django.contrib.auth import login, get_user_model
 from django.urls import reverse_lazy
 from django.shortcuts import redirect
 from django.views.generic import CreateView, DeleteView, DetailView
+from django.contrib.auth.mixins import LoginRequiredMixin
 from .forms import CustomUserCreationForm
 
 User = get_user_model()
@@ -18,13 +19,13 @@ class SignUpView(CreateView):
         return redirect("index")
 
 
-class UserDetailView(DetailView):
+class UserDetailView(LoginRequiredMixin, DetailView):
     model = User
     template_name = "accounts/user_detail.html"
     context_object_name = "object"
 
 
-class UserDeleteView(DeleteView):
+class UserDeleteView(LoginRequiredMixin, DeleteView):
     model = User
     success_url = reverse_lazy("index")
     template_name = "accounts/user_delete_confirm.html"

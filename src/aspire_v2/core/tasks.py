@@ -65,6 +65,8 @@ def create_report(
 
 @shared_task
 def generate_pdf(report_id: str):
+    channel_layer = get_channel_layer()
+
     report = get_object_or_404(Report, pk=report_id)
     plot_data = {}
     for result in report.results.all():
@@ -93,5 +95,10 @@ def generate_pdf(report_id: str):
         browser.close()
 
     report.pdf.save(f"report_{report_id}.pdf", ContentFile(pdf_bytes), save=True)
+
+    async_to_sync(channel_layer.group_send)(
+        f"pdf.{report_id}",
+        {"type": "pdf_complete"},
+    )
 
     return "Generated"
