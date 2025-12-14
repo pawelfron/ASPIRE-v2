@@ -9,32 +9,33 @@
     </style>
   </head>
   <body>
-    <div class="max-w-3/4 ml-auto mr-auto">
+    <div class="max-w-3/4 mr-auto ml-auto mt-5">
       <div class="flex justify-between">
         <div>
-          <h1 class="text-3xl font-bold mb-3">{{ report.title }}</h1>
-          <p class="font-light text-sm mb-5">{{ report.date }}</p>
+          <h1 class="text-3xl font-bold mb-3">{{ title }}</h1>
+          <p class="font-light text-sm mb-3">{{ date }}</p>
+          <p class="font-light text-sm mb-5">{{ description }}</p>
         </div>
       </div>
 
-      {% for analysis_result in report.results.all %}
+      {% for analysis_result in data %}
       <div class="mb-5">
-        <h3 class="font-semibold text-lg">{{analysis_result.analysis_display_name}}</h3>
-        {% if analysis_result.result.type == "value" %}
-        <b>{{ analysis_result.result.value }}</b>
-        {% elif analysis_result.result.type == "table" %}
+        <h3 class="font-semibold text-lg">{{ analysis_result.analysis_type }}</h3>
+        {% if analysis_result.type == "value" %}
+        <span>{{ analysis_result.value }}</span>
+        {% elif analysis_result.type == "table" %}
         <div class="overflow-x-auto rounded-box border border-base-content/5">
           <table class="table">
             <thead>
               <tr class="bg-base-200">
                 <th></th>
-                {% for column in analysis_result.result.value.columns %}
+                {% for column in analysis_result.value.columns %}
                 <th>{{ column }}</th>
                 {% endfor %}
               </tr>
             </thead>
             <tbody>
-              {% for row in analysis_result.result.value.data_with_index %}
+              {% for row in analysis_result.value.data_with_index %}
               <tr>
                 {% for value in row %}
                 <td>{{ value }}</td>
@@ -44,13 +45,13 @@
             </tbody>
           </table>
         </div>
-        {% elif analysis_result.result.type == "plot" %}
-        <div id="plot {{analysis_result.analysis_type}}" class="max-w-96"></div>
-        {% elif analysis_result.result.type == "composite" %} {% for label, subresult in analysis_result.result.value.items %}
+        {% elif analysis_result.type == "plot" %}
+        <img src="{{analysis_result.value}}" alt="Plot" />
+        {% elif analysis_result.type == "composite" %} {% for label, subresult in analysis_result.value.items %}
         <div class="mb-3">
           <h5 class="font-semibold">{{ label }}</h5>
           {% if subresult.type == "value" %}
-          <b>{{ subresult.value }}</b>
+          <span>{{ subresult.value }}</span>
           {% elif subresult.type == "table" %}
           <div class="overflow-x-auto rounded-box border border-base-content/5">
             <table class="table">
@@ -74,23 +75,12 @@
             </table>
           </div>
           {% elif subresult.type == "plot" %}
-          <div id="plot {{analysis_result.analysis_type}}-{{label}}"></div>
+          <img src="{{subresult.value}}" alt="Plot" />
           {% endif %}
         </div>
         {% endfor %} {% endif %}
       </div>
       {% endfor %}
     </div>
-
-    <script src="https://cdn.plot.ly/plotly-3.3.0.min.js" charset="utf-8"></script>
-    {{plot_data|json_script:'plot_data'}}
-    <script>
-      const plotData = JSON.parse(document.getElementById('plot_data').textContent);
-
-      for (const [id, plot] of Object.entries(plotData)) {
-        const { data, layout } = plot.value;
-        Plotly.newPlot(`plot ${id}`, data, layout);
-      }
-    </script>
   </body>
 </html>

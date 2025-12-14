@@ -24,9 +24,9 @@
 
   {% for analysis_result in report.results.all %}
   <div class="mb-5">
-    <h3 class="font-semibold text-lg">{{analysis_result.analysis_type }}</h3>
+    <h3 class="font-semibold text-lg">{{ analysis_result.analysis_display_name }}</h3>
     {% if analysis_result.result.type == "value" %}
-    <b>{{ analysis_result.result.value }}</b>
+    <span>{{ analysis_result.result.value }}</span>
     {% elif analysis_result.result.type == "table" %}
     <div class="overflow-x-auto rounded-box border border-base-content/5">
       <table class="table">
@@ -55,7 +55,7 @@
     <div class="mb-3">
       <h5 class="font-semibold">{{ label }}</h5>
       {% if subresult.type == "value" %}
-      <b>{{ subresult.value }}</b>
+      <span>{{ subresult.value }}</span>
       {% elif subresult.type == "table" %}
       <div class="overflow-x-auto rounded-box border border-base-content/5">
         <table class="table">

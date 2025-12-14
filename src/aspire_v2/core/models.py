@@ -1,6 +1,5 @@
 from django.db import models
 from django.utils.functional import cached_property
-from django.contrib.postgres.fields import ArrayField
 from accounts.models import User
 import numpy as np
 import pandas as pd
@@ -28,9 +27,11 @@ class AnalysisResult(models.Model):
     date = models.DateTimeField(auto_now_add=True)
     result = models.JSONField()
 
-    # @property
-    # def analysis_display_name(self):
-    #     return all_analyses[self.analysis_type].name
+    @property
+    def analysis_display_name(self):
+        from .lib.analyses import all_analyses
+
+        return all_analyses[self.analysis_type].name
 
 
 class RetrievalTask(models.Model):
