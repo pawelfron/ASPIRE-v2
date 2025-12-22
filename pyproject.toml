@@ -14,7 +14,7 @@ dependencies = [
     "django-storages==1.14.6",
     "flower==2.0.1",
     "ir-measures==0.4.2",
-    "kaleido>=1.2.0",
+    "kaleido==1.2.0",
     "matplotlib==3.10.8",
     "numpy==2.3.5",
     "pandas==2.3.3",
