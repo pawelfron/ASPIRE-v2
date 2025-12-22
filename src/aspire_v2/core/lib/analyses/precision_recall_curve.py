@@ -24,9 +24,10 @@ class PrecisionRecallCurveForm(AnalysisForm):
         if retrieval_task and retrieval_runs:
             max_relevance = retrieval_task.qrels_dataframe["relevance"].max()
             self.fields["relevance_threshold"].max_value = max_relevance
+            self.fields["relevance_threshold"].initial = max_relevance
             self.fields["relevance_threshold"].widget = forms.NumberInput(
                 attrs={
-                    "type": "range",
+                    # "type": "range",
                     "step": "1",
                     "min": "1",
                     "max": max_relevance,

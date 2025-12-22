@@ -12,6 +12,7 @@ from ..measures import (
 import numpy as np
 import pandas as pd
 import scipy
+import statsmodels.api as sm
 
 from django import forms
 
@@ -26,9 +27,9 @@ class ExperimentalEvaluationForm(AnalysisForm):
     correction_method = forms.ChoiceField(
         label="Correction method",
         choices=[
-            ("Bonferroni", "Bonferroni"),
-            ("Holm", "Holm"),
-            ("Holm-Sidak", "Holm-Sidak"),
+            ("bonferroni", "Bonferroni"),
+            ("holm", "Holm"),
+            ("holm-sidak", "Holm-Sidak"),
         ],
     )
     correction_value = forms.FloatField(
@@ -38,7 +39,7 @@ class ExperimentalEvaluationForm(AnalysisForm):
         initial=0.05,
         widget=forms.NumberInput(
             attrs={
-                "type": "range",
+                # "type": "range",
                 "step": "0.01",
                 "min": "0.01",
                 "max": "0.05",
@@ -59,7 +60,7 @@ class ExperimentalEvaluationForm(AnalysisForm):
             self.fields["relevance_threshold"].max_value = max_relevance
             self.fields["relevance_threshold"].widget = forms.NumberInput(
                 attrs={
-                    "type": "range",
+                    # "type": "range",
                     "step": "1",
                     "min": "1",
                     "max": max_relevance,
@@ -85,6 +86,8 @@ class ExperimentalEvaluation(Analysis):
         **parameters: dict,
     ) -> Result:
         relevance_threshold = parameters["relevance_threshold"]
+        correction_method = parameters["correction_method"]
+        correction_value = float(parameters["correction_value"])
 
         measures: list[Measure] = [
             AveragePrecision(rel=relevance_threshold, cutoff=100, judged_only=False),
@@ -115,7 +118,7 @@ class ExperimentalEvaluation(Analysis):
 
         baseline_run = list(
             filter(
-                lambda run: str(run.id) != parameters["baseline_run"],
+                lambda run: str(run.id) == parameters["baseline_run"],
                 retrieval_runs,
             )
         )[0]
@@ -126,6 +129,9 @@ class ExperimentalEvaluation(Analysis):
         )
 
         p_values_table = pd.DataFrame(
+            index=[measure.measure_name for measure in measures]
+        )
+        corrected_p_values_table = pd.DataFrame(
             index=[measure.measure_name for measure in measures]
         )
         for run in runs_to_compare:
@@ -152,13 +158,18 @@ class ExperimentalEvaluation(Analysis):
                     for v, qid in zip(run_values, run_query_ids)
                     if qid in common_query_ids
                 ]
+
                 result = scipy.stats.ttest_rel(baseline_values, run_values)
                 p_values.append(None if np.isnan(result.pvalue) else result.pvalue)
             p_values_table[run.title] = p_values
+            corrected_p_values_table[run.title] = sm.stats.multipletests(
+                np.array(p_values), alpha=correction_value, method=correction_method
+            )[1]
 
         return CompositeResult(
             {
                 "Measure values": TableResult(measure_values_table),
                 "P-values": TableResult(p_values_table),
+                "Corrected P-values": TableResult(corrected_p_values_table),
             }
         )

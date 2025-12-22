@@ -13,7 +13,7 @@
         {% for field in form %}
         <div class="mb-1">
           <label for="{{ field.id_for_label }}" class="label block">{{ field.label }}</label>
-          {{ field}} {% if field.help_text %}
+          {{ field|add_class:"input" }} {% if field.help_text %}
           <p class="label">{{ field.help_text }}</p>
           {% endif %}
 

@@ -51,7 +51,7 @@
     </div>
     {% elif analysis_result.result.type == "plot" %}
     <div id="plot {{analysis_result.analysis_type}}"></div>
-    {% elif analysis_result.result.type == "composite" %} {% for label, subresult in analysis_result.result.value.items %}
+    {% elif analysis_result.result.type == "composite" %} {% for label, subresult in analysis_result.result.value %}
     <div class="mb-3">
       <h5 class="font-semibold">{{ label }}</h5>
       {% if subresult.type == "value" %}

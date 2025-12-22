@@ -77,10 +77,10 @@ class DocumentsRetrievedByAllSystems(Analysis):
                     len(queries_with_retrieved_docs)
                 ),
                 "Queries with documents retrieved by all systems": ValueResult(
-                    sorted(queries_with_retrieved_docs)
+                    ", ".join(sorted(queries_with_retrieved_docs))
                 ),
                 "Sample of documents retrieved by all systems": ValueResult(
-                    most_frequent_docs
+                    ", ".join(most_frequent_docs)
                 ),
             }
         )

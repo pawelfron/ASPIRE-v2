@@ -33,6 +33,9 @@ class AnalysisResult(models.Model):
 
         return all_analyses[self.analysis_type].name
 
+    class Meta:
+        ordering = ["date"]
+
 
 class RetrievalTask(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

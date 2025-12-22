@@ -175,7 +175,7 @@ def view_report(request, report_id: str):
         if data["type"] == "plot":
             plot_data[result.analysis_type] = data
         elif data["type"] == "composite":
-            for label, sub_result in data["value"].items():
+            for label, sub_result in data["value"]:
                 if sub_result["type"] == "plot":
                     plot_data[f"{result.analysis_type}-{label}"] = sub_result
     if request.method == "POST" and not report.pdf:

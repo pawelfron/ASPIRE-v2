@@ -8,7 +8,7 @@ class CompositeResult(Result):
     def serialize(self):
         return {
             "type": "composite",
-            "value": {
-                label: result.serialize() for label, result in self.children.items()
-            },
+            "value": [
+                (label, result.serialize()) for label, result in self.children.items()
+            ],
         }

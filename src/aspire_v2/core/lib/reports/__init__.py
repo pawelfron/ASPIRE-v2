@@ -1,10 +1,12 @@
 from ..interfaces import Report
 from .retrieval_performance_report import RetrievalPerformanceReport
-from .query_based_analysis_report import QueryBasedAnalysisReport
+from .query_collection_based_performance_report import (
+    QueryCollectionBasedPerformanceReport,
+)
 
 all_reports: dict[str, type[Report]] = {
     "retrieval_performance": RetrievalPerformanceReport,
-    "query_based": QueryBasedAnalysisReport,
+    "collection_based": QueryCollectionBasedPerformanceReport,
 }
 
 __all__ = [all_reports]
