@@ -85,7 +85,7 @@ def generate_pdf(report_id: str):
             )
         elif result.result["type"] == "composite":
             subdata = {}
-            for label, sub_result in result.result["value"].items():
+            for label, sub_result in result.result["value"]:
                 if sub_result["type"] == "plot":
                     fig = pio.from_json(json.dumps(sub_result["value"]))
                     img = pio.to_image(fig, format="png", width=800, height=400)
