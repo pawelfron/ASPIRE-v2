@@ -18,6 +18,8 @@ services:
       - POSTGRES_DB=aspire_db
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${aspire_pass}
+    ports:
+      - "5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U aspire_user -d aspire_db"]
       interval: 5s
@@ -27,6 +29,9 @@ services:
   minio:
     image: minio/minio
     restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
     environment:
       - MINIO_ROOT_USER=${S3_ACCESS_KEY_ID}
       - MINIO_ROOT_PASSWORD=${S3_SECRET_ACCESS_KEY}
@@ -41,6 +46,8 @@ services:
   redis_sessions:
     image: redis:7-alpine
     restart: unless-stopped
+    ports:
+      - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -50,6 +57,8 @@ services:
   redis_results:
     image: redis:7-alpine
     restart: unless-stopped
+    ports:
+      - "6380:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -59,6 +68,9 @@ services:
   rabbitmq:
     image: rabbitmq:3-management-alpine
     restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
     environment:
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS}
@@ -75,6 +87,8 @@ services:
     env_file: ".env"
     environment:
       - MODE=PROD
+    ports:
+      - "5555:5555"
     depends_on:
       - redis_results
       - worker
@@ -82,6 +96,8 @@ services:
   server:
     build: .
     command: ./docker-entrypoint.sh
+    ports:
+      - "8000:8000"
     volumes:
       - .:/app
     env_file: ".env"
@@ -102,7 +118,7 @@ services:
   worker:
     build: .
     working_dir: /app/src/aspire_v2
-    command: celery -A aspire_v2 worker -l INFO
+    command: watchmedo auto-restart --directory=/app/src --pattern=*.py --recursive -- celery -A aspire_v2 worker -l INFO
     volumes:
       - .:/app
     env_file: ".env"

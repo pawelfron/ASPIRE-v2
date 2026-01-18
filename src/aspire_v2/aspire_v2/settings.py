@@ -12,9 +12,6 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -31,6 +28,9 @@ ALLOWED_HOSTS = ["localhost", "127.0.0.1", "nginx", "web"]
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost",
+    "http://127.0.0.1",
+    "http://nginx",
+    "http://web",
 ]
 
 CSRF_COOKIE_SECURE = False  # Set to True if using HTTPS
@@ -98,11 +98,11 @@ WSGI_APPLICATION = "aspire_v2.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME"),
+        "NAME": "aspire_db",
         "USER": os.getenv("DB_USER"),
         "PASSWORD": os.getenv("DB_PASS"),
-        "HOST": os.getenv("DB_HOST"),
-        "PORT": os.getenv("DB_PORT"),
+        "HOST": "db",
+        "PORT": "5432",
     }
 }
 
@@ -112,7 +112,7 @@ DATABASES = {
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": f"redis://{os.getenv('REDIS_SESSIONS_HOST')}:{os.getenv('REDIS_SESSIONS_PORT')}/{os.getenv('REDIS_SESSIONS_DB')}",
+        "LOCATION": "redis://redis_sessions:6379/0",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
@@ -167,10 +167,10 @@ STATICFILES_DIRS = [
 
 S3_ACCESS_KEY_ID = os.getenv("S3_ACCESS_KEY_ID")
 S3_SECRET_ACCESS_KEY = os.getenv("S3_SECRET_ACCESS_KEY")
-S3_STORAGE_BUCKET_NAME = os.getenv("S3_STORAGE_BUCKET_NAME")
-S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")
-S3_USE_SSL = bool(os.getenv("S3_USE_SSL"))
-S3_VERIFY = bool(os.getenv("S3_VERIFY"))
+S3_STORAGE_BUCKET_NAME = "aspire-files"
+S3_ENDPOINT_URL = "http://minio:9000"
+S3_USE_SSL = False
+S3_VERIFY = False
 S3_SIGNATURE_VERSION = "s3v4"
 S3_REGION_NAME = "us-east-1"
 S3_ADDRESSING_STYLE = "path"
@@ -198,8 +198,10 @@ STORAGES = {
 
 # Celery config
 
-CELERY_BROKER_URL = f"amqp://{os.getenv('RABBITMQ_USER')}:{os.getenv('RABBITMQ_PASS')}@{os.getenv('RABBITMQ_HOST')}:{os.getenv('RABBITMQ_PORT')}//"
-CELERY_BACKEND_URL = f"redis://{os.getenv('REDIS_RESULTS_HOST')}:{os.getenv('REDIS_RESULTS_PORT')}/{os.getenv('REDIS_RESULTS_DB')}"
+CELERY_BROKER_URL = (
+    f"amqp://{os.getenv('RABBITMQ_USER')}:{os.getenv('RABBITMQ_PASS')}@rabbitmq:5672//"
+)
+CELERY_BACKEND_URL = "redis://redis_results:6379/0"
 
 
 # Channels config
@@ -210,9 +212,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [
-                (os.getenv("REDIS_SESSIONS_HOST"), os.getenv("REDIS_SESSIONS_PORT"))
-            ],
+            "hosts": [("redis_sessions", "6379")],
         },
     },
 }
