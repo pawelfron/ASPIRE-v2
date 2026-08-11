@@ -1,135 +1,97 @@
 services:
   nginx:
-    image: nginx:alpine
-    ports:
+    ports: !override
       - "8080:8080"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - server
-      - flower
-      - rabbitmq
-      - minio
+    entrypoint: ["/bin/sh", "/aspire/dev-entrypoint.sh"]
+    environment:
+      DOMAIN: localhost
+      NGINX_ADMIN_USER: ${NGINX_ADMIN_USER:-admin}
+      NGINX_ADMIN_PASS: ${NGINX_ADMIN_PASS:-admin}
+    volumes: !override
+      - ./nginx/dev.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/dev-entrypoint.sh:/aspire/dev-entrypoint.sh:ro
+      - ./src/aspire_v2/static:/var/www/static:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  certbot:
+    profiles:
+      - production-only
 
   db:
-    image: postgres:15
-    restart: unless-stopped
-    environment:
-      - POSTGRES_DB=aspire_db
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${aspire_pass}
     ports:
       - "5433:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U aspire_user -d aspire_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
 
   minio:
-    image: minio/minio
-    restart: unless-stopped
     ports:
       - "9000:9000"
       - "9001:9001"
     environment:
-      - MINIO_ROOT_USER=${S3_ACCESS_KEY_ID}
-      - MINIO_ROOT_PASSWORD=${S3_SECRET_ACCESS_KEY}
-      - MINIO_BROWSER_REDIRECT_URL=http://localhost:8080/minio
-    command: server /data --console-address ":9001"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      MINIO_BROWSER_REDIRECT_URL: http://localhost:8080/minio
 
   redis_sessions:
-    image: redis:7-alpine
-    restart: unless-stopped
     ports:
       - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   redis_results:
-    image: redis:7-alpine
-    restart: unless-stopped
     ports:
       - "6380:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   rabbitmq:
-    image: rabbitmq:3-management-alpine
-    restart: unless-stopped
     ports:
       - "5672:5672"
       - "15672:15672"
-    environment:
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS}
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   flower:
-    build: .
-    working_dir: /app/src/aspire_v2
-    command: celery -A aspire_v2 flower --port=5555 --basic-auth=${FLOWER_USER}:${FLOWER_PASS} --url-prefix=/flower
-    env_file: ".env"
-    environment:
-      - MODE=PROD
     ports:
       - "5555:5555"
-    depends_on:
-      - redis_results
-      - worker
+    environment:
+      MODE: DEBUG
+    volumes:
+      - .:/app
 
   server:
-    build: .
-    command: ./docker-entrypoint.sh
     ports:
       - "8000:8000"
-    volumes:
-      - .:/app
-    env_file: ".env"
+    entrypoint: ["/app/docker-entrypoint.dev.sh"]
     environment:
-      - MODE=PROD
+      MODE: DEBUG
+      SECURE_SSL_REDIRECT: "false"
+    volumes: !override
+      - .:/app
     depends_on:
-      db:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-      redis_sessions:
-        condition: service_healthy
-      redis_results:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
+      frontend:
+        condition: service_started
 
   worker:
-    build: .
-    working_dir: /app/src/aspire_v2
-    command: watchmedo auto-restart --directory=/app/src --pattern=*.py --recursive -- celery -A aspire_v2 worker -l INFO
+    entrypoint: ["watchmedo"]
+    user: "1000:1000"
+    command:
+      - auto-restart
+      - --directory=/app/src
+      - --pattern=*.py
+      - --recursive
+      - --
+      - celery
+      - -A
+      - aspire_v2
+      - worker
+      - -l
+      - INFO
+      - --concurrency=${CELERY_WORKER_CONCURRENCY:-2}
+    environment:
+      MODE: DEBUG
     volumes:
       - .:/app
-    env_file: ".env"
-    environment:
-      - MODE=PROD
-    depends_on:
-      db:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-      redis_results:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
+
+  frontend:
+    image: node:22-alpine
+    working_dir: /app/src/aspire_v2/frontend
+    command: sh -c "npm install && npm run dev"
+    volumes:
+      - .:/app
+    restart: unless-stopped

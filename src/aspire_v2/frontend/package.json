@@ -8,7 +8,7 @@
     "build": "npm run build:css && npm run build:ts",
     "dev:css": "postcss src/styles/input.css -o ../static/css/output.css --watch",
     "dev:ts": "tsc --watch",
-    "dev": "npm run dev:css & npm run dev:ts"
+    "dev": "sh -c 'npm run dev:css & npm run dev:ts & wait'"
   },
   "keywords": [],
   "author": "Paweł Froń",

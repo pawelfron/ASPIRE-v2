@@ -7,5 +7,6 @@ __pycache__
 node_modules
 .venv
 venv
-static/css
-static/js
+*.md
+.env
+.cursor
