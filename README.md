@@ -21,13 +21,10 @@ Hot-reload for Django, Celery, and frontend (Tailwind/TypeScript):
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
 
-- App via nginx: http://localhost:8080
-- Django directly: http://localhost:8000
-- Flower: http://localhost:8080/flower/ (or :5555)
-- RabbitMQ management: http://localhost:8080/rabbitmq/ (nginx basic auth + RabbitMQ login)
-- MinIO console: http://localhost:8080/minio/ (nginx basic auth + MinIO login)
-
-Nginx basic auth for admin UIs uses `NGINX_ADMIN_USER` / `NGINX_ADMIN_PASS`.
+- App: http://localhost:8000
+- Flower: http://localhost:5555/flower/
+- RabbitMQ management: http://localhost:15672
+- MinIO console: http://localhost:9001
 
 ## Production
 

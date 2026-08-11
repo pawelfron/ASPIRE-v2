@@ -1,22 +1,7 @@
 services:
   nginx:
-    ports: !override
-      - "8080:8080"
-    entrypoint: ["/bin/sh", "/aspire/dev-entrypoint.sh"]
-    environment:
-      DOMAIN: localhost
-      NGINX_ADMIN_USER: ${NGINX_ADMIN_USER:-admin}
-      NGINX_ADMIN_PASS: ${NGINX_ADMIN_PASS:-admin}
-    volumes: !override
-      - ./nginx/dev.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/dev-entrypoint.sh:/aspire/dev-entrypoint.sh:ro
-      - ./src/aspire_v2/static:/var/www/static:ro
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+    profiles:
+      - production-only
 
   certbot:
     profiles:
@@ -31,7 +16,7 @@ services:
       - "9000:9000"
       - "9001:9001"
     environment:
-      MINIO_BROWSER_REDIRECT_URL: http://localhost:8080/minio
+      MINIO_BROWSER_REDIRECT_URL: http://localhost:9001
 
   redis_sessions:
     ports:
