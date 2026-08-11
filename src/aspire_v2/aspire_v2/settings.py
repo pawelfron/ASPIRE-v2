@@ -7,11 +7,26 @@ For more information on this file, see
 https://docs.djangoproject.com/en/5.2/topics/settings/
 
 For the full list of settings and their values, see
-https://docs.djangoproject.com/en/5.2/ref/settings/
+    10|https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
 import os
+
+
+def _env_bool(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_list(name: str, default: list[str] | None = None) -> list[str]:
+    value = os.getenv(name)
+    if not value:
+        return default or []
+    return [item.strip() for item in value.split(",") if item.strip()]
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,23 +39,42 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
 DEBUG = os.getenv("MODE") == "DEBUG"
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "nginx", "web"]
+ALLOWED_HOSTS = _env_list(
+    "ALLOWED_HOSTS",
+    ["localhost", "127.0.0.1", "nginx", "server"],
+)
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost",
-    "http://127.0.0.1",
-    "http://nginx",
-    "http://web",
-]
+CSRF_TRUSTED_ORIGINS = _env_list(
+    "CSRF_TRUSTED_ORIGINS",
+    [
+        "http://localhost",
+        "http://localhost:8080",
+        "http://127.0.0.1",
+        "http://127.0.0.1:8080",
+        "http://nginx",
+        "http://server",
+    ],
+)
 
-CSRF_COOKIE_SECURE = False  # Set to True if using HTTPS
 CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = "Lax"
 
 # Session cookie settings (recommended)
-SESSION_COOKIE_SECURE = False  # Set to True if using HTTPS
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
+
+if DEBUG:
+    CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_SECURE = False
+else:
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    # TLS terminates at nginx; do not redirect inside the app (breaks healthchecks).
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = _env_bool("SECURE_SSL_REDIRECT", False)
+    SECURE_HSTS_SECONDS = int(os.getenv("SECURE_HSTS_SECONDS", "31536000"))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
 
 # Application definition
 
@@ -158,6 +192,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
@@ -201,7 +236,12 @@ STORAGES = {
 CELERY_BROKER_URL = (
     f"amqp://{os.getenv('RABBITMQ_USER')}:{os.getenv('RABBITMQ_PASS')}@rabbitmq:5672//"
 )
-CELERY_BACKEND_URL = "redis://redis_results:6379/0"
+CELERY_RESULT_BACKEND = "redis://redis_results:6379/0"
+CELERY_TASK_ACKS_LATE = True
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_TASK_SOFT_TIME_LIMIT = int(os.getenv("CELERY_TASK_SOFT_TIME_LIMIT", "600"))
+CELERY_TASK_TIME_LIMIT = int(os.getenv("CELERY_TASK_TIME_LIMIT", "720"))
+CELERY_WORKER_CONCURRENCY = int(os.getenv("CELERY_WORKER_CONCURRENCY", "2"))
 
 
 # Channels config
@@ -235,8 +275,8 @@ LOGOUT_REDIRECT_URL = "/"
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = os.getenv("EMAIL_HOST")
-EMAIL_PORT = int(os.getenv("EMAIL_PORT"))
-EMAIL_USE_TLS = bool(os.getenv("EMAIL_USE_TLS"))
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+EMAIL_USE_TLS = _env_bool("EMAIL_USE_TLS", True)
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD") or os.getenv("EMAIL_PASSWORD")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
