@@ -36,6 +36,24 @@ docker compose up -d --build
 - TLS certificates live in the `certbot_certs` volume
 - On first start nginx bootstraps a short-lived self-signed cert so the stack can boot
 
+### First admin user
+
+There is no bootstrap admin in the deploy entrypoint. After the stack is up, create a Django superuser (the custom user model uses **email** as the username):
+
+```bash
+docker compose exec server python manage.py createsuperuser
+```
+
+Then open `/admin/` (HTTPS via nginx in production, or `http://localhost:8000/admin/` in development).
+
+Non-interactive example:
+
+```bash
+docker compose exec -e DJANGO_SUPERUSER_EMAIL=admin@example.com \
+  -e DJANGO_SUPERUSER_PASSWORD='your-password' \
+  server python manage.py createsuperuser --noinput
+```
+
 ### Issue a Let's Encrypt certificate
 
 Set `DOMAIN` and `CERTBOT_EMAIL` in `.env`, ensure DNS points at the host, then:
