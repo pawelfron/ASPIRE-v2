@@ -112,7 +112,7 @@ def generate_pdf(report_id: str):
                 {
                     "type": result.result["type"],
                     "value": result.result["value"],
-                    "analysis_type": result.analysis_type,
+                    "analysis_type": result.analysis_display_name,
                 }
             )
 

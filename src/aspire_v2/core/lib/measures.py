@@ -10,7 +10,7 @@ class Accuracy(Measure):
 
     @property
     def measure_name(self) -> str:
-        self._measure_name = f"Accuracy(rel={self.rel})@{self.cutoff}"
+        return f"Accuracy(rel={self.rel})@{self.cutoff}"
 
 
 class AlphaDCG(Measure):
@@ -136,6 +136,17 @@ class NumberOfResults(Measure):
         return f"NumRet(rel={self.rel})"
 
 
+class NumberOfRelevantRetrievedDocuments(Measure):
+    display_name = "Number of Relevant Retrieved Documents"
+
+    def __init__(self, *, rel: int) -> None:
+        self.rel = rel
+
+    @property
+    def measure_name(self) -> str:
+        return f"NumRelRet(rel={self.rel})"
+
+
 class InterpolatedPrecisionAtRecallCutoff(Measure):
     display_name = "Interpolated Precision at given recall cutoff"
 
@@ -181,6 +192,17 @@ class nDCG(Measure):
         return f"nDCG(dcg='{self.dcg}',judged_only={self.judged_only})@{self.cutoff}"
 
 
+class RPrecision(Measure):
+    display_name = "R-Precision"
+
+    def __init__(self, *, rel: int) -> None:
+        self.rel = rel
+
+    @property
+    def measure_name(self) -> str:
+        return f"Rprec(rel={self.rel})"
+
+
 class Recall(Measure):
     display_name = "Recall at cutoff"
 
@@ -204,4 +226,4 @@ class MeanReciprocalRank(Measure):
 
     @property
     def measure_name(self) -> str:
-        return f"RR(rel={self.rel},judged_only={self.judged_only})"
+        return f"RR(rel={self.rel},judged_only={self.judged_only})@{self.cutoff}"

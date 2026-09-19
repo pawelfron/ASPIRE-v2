@@ -1,9 +1,16 @@
-from ..interfaces import Analysis, Result, AnalysisForm
-from ..results import TableResult
+from ..interfaces import Analysis, Measure, Result, AnalysisForm
+from ..results import CompositeResult, TableResult
 from ...models import RetrievalRun, RetrievalTask
 from ..utils.measure_calculation import get_aggregate_measure
 import pandas as pd
-from ..measures import NumberOfQueries, NumberOfRelevantDocuments, NumberOfResults
+from ..measures import (
+    NumberOfQueries,
+    NumberOfRelevantDocuments,
+    NumberOfRelevantRetrievedDocuments,
+    PercentageOfRelevantDocsInCutoff,
+    RPrecision,
+    Recall,
+)
 
 from django import forms
 
@@ -22,7 +29,9 @@ class OverallRetrievalCharacteristicsForm(AnalysisForm):
         )
 
         if retrieval_task and retrieval_runs:
-            max_relevance = retrieval_task.qrels_dataframe["relevance"].max()
+            # Django compares the initial of a disabled field against its empty
+            # values, which a numpy scalar cannot survive.
+            max_relevance = int(retrieval_task.qrels_dataframe["relevance"].max())
             self.fields["relevance_threshold"].max_value = max_relevance
             self.fields["relevance_threshold"].initial = max_relevance
             self.fields["relevance_threshold"].widget = forms.NumberInput(
@@ -46,16 +55,55 @@ class OverallRetrievalCharacteristics(Analysis):
         retrieval_runs: list[RetrievalRun],
         **parameters: dict,
     ) -> Result:
-        measures = [
+        relevance_threshold = int(parameters["relevance_threshold"])
+
+        overall_measures: list[Measure] = [
             NumberOfQueries(),
+            # No ir_measures provider implements NumRel at a relevance level other
+            # than its default, so this one measure cannot follow the threshold.
             NumberOfRelevantDocuments(rel=1),
-            NumberOfResults(rel=1),
+            NumberOfRelevantRetrievedDocuments(rel=relevance_threshold),
+        ]
+        precision_measures: list[Measure] = [
+            PercentageOfRelevantDocsInCutoff(
+                rel=relevance_threshold, cutoff=cutoff, judged_only=False
+            )
+            for cutoff in (5, 10, 25, 50, 100)
+        ] + [RPrecision(rel=relevance_threshold)]
+        recall_measures: list[Measure] = [
+            Recall(rel=relevance_threshold, cutoff=cutoff, judged_only=False)
+            for cutoff in (50, 1000)
         ]
 
-        result = pd.DataFrame(index=[measure.measure_name for measure in measures])
+        return CompositeResult(
+            {
+                "Overall measures": TableResult(
+                    self._build_table(retrieval_runs, overall_measures, as_int=True)
+                ),
+                "Precision measures": TableResult(
+                    self._build_table(retrieval_runs, precision_measures)
+                ),
+                "Recall measures": TableResult(
+                    self._build_table(retrieval_runs, recall_measures)
+                ),
+            }
+        )
+
+    def _build_table(
+        self,
+        retrieval_runs: list[RetrievalRun],
+        measures: list[Measure],
+        as_int: bool = False,
+    ) -> pd.DataFrame:
+        table = pd.DataFrame(index=[measure.measure_name for measure in measures])
         for retrieval_run in retrieval_runs:
-            result[retrieval_run.title] = [
+            values = [
                 get_aggregate_measure(retrieval_run, measure) for measure in measures
             ]
+            table[retrieval_run.title] = (
+                [int(value) for value in values]
+                if as_int
+                else [round(value, 4) for value in values]
+            )
 
-        return TableResult(result)
+        return table

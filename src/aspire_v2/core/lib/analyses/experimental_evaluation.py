@@ -56,7 +56,7 @@ class ExperimentalEvaluationForm(AnalysisForm):
         )
 
         if retrieval_task and retrieval_runs:
-            max_relevance = retrieval_task.qrels_dataframe["relevance"].max()
+            max_relevance = int(retrieval_task.qrels_dataframe["relevance"].max())
             self.fields["relevance_threshold"].max_value = max_relevance
             self.fields["relevance_threshold"].widget = forms.NumberInput(
                 attrs={
@@ -96,7 +96,7 @@ class ExperimentalEvaluation(Analysis):
             ),
             nDCG(cutoff=10, judged_only=True, dcg="log2"),
             Recall(rel=relevance_threshold, cutoff=50, judged_only=False),
-            MeanReciprocalRank(rel=relevance_threshold, cutoff=100, judged_only=False),
+            MeanReciprocalRank(rel=relevance_threshold, cutoff=1000, judged_only=False),
         ]
 
         measure_values = {
@@ -127,6 +127,10 @@ class ExperimentalEvaluation(Analysis):
                 lambda run: str(run.id) != parameters["baseline_run"], retrieval_runs
             )
         )
+
+        # With only two runs there is a single p-value per measure, so correcting for
+        # multiple comparisons would be misleading. The original applies the same gate.
+        apply_correction = len(retrieval_runs) > 2
 
         p_values_table = pd.DataFrame(
             index=[measure.measure_name for measure in measures]
@@ -160,11 +164,19 @@ class ExperimentalEvaluation(Analysis):
                 ]
 
                 result = scipy.stats.ttest_rel(baseline_values, run_values)
-                p_values.append(None if np.isnan(result.pvalue) else result.pvalue)
-            p_values_table[run.title] = p_values
-            corrected_p_values_table[run.title] = sm.stats.multipletests(
-                np.array(p_values), alpha=correction_value, method=correction_method
-            )[1]
+                p_values.append(result.pvalue)
+
+            p_values = np.array(p_values, dtype=float)
+            corrected_p_values = (
+                sm.stats.multipletests(
+                    p_values, alpha=correction_value, method=correction_method
+                )[1]
+                if apply_correction
+                else p_values
+            )
+
+            p_values_table[run.title] = self._serializable(p_values)
+            corrected_p_values_table[run.title] = self._serializable(corrected_p_values)
 
         return CompositeResult(
             {
@@ -173,3 +185,8 @@ class ExperimentalEvaluation(Analysis):
                 "Corrected P-values": TableResult(corrected_p_values_table),
             }
         )
+
+    @staticmethod
+    def _serializable(values: np.ndarray) -> list[float | None]:
+        """NaN has no JSON representation, so replace it before the result is stored."""
+        return [None if np.isnan(value) else float(value) for value in values]

@@ -22,7 +22,9 @@ class PrecisionRecallCurveForm(AnalysisForm):
         )
 
         if retrieval_task and retrieval_runs:
-            max_relevance = retrieval_task.qrels_dataframe["relevance"].max()
+            # Django compares the initial of a disabled field against its empty
+            # values, which a numpy scalar cannot survive.
+            max_relevance = int(retrieval_task.qrels_dataframe["relevance"].max())
             self.fields["relevance_threshold"].max_value = max_relevance
             self.fields["relevance_threshold"].initial = max_relevance
             self.fields["relevance_threshold"].widget = forms.NumberInput(
@@ -55,7 +57,7 @@ class PrecisionRecallCurve(Analysis):
                 get_aggregate_measure(
                     retrieval_run,
                     InterpolatedPrecisionAtRecallCutoff(
-                        rel=relevance_threshold, recall=recall, judged_only=True
+                        rel=relevance_threshold, recall=recall, judged_only=False
                     ),
                 )
                 for recall in x
