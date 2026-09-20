@@ -17,3 +17,7 @@ src/aspire_v2/staticfiles/
 src/aspire_v2/res
 
 *.egg-info/
+
+.pytest_cache/
+.coverage
+htmlcov/

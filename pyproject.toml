@@ -39,6 +39,9 @@ packages = []
 
 [dependency-groups]
 dev = [
+    "pytest>=8.0",
+    "pytest-cov>=6.0",
+    "pytest-django>=4.10",
     "ruff>=0.13.1",
 ]
 
@@ -77,3 +80,26 @@ exclude = [
 
 [tool.ruff.lint]
 select = ["E", "F"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src/aspire_v2"]
+testpaths = ["tests"]
+DJANGO_SETTINGS_MODULE = "aspire_v2.settings"
+addopts = [
+    "--cov=core.lib.analyses",
+    "--cov=core.lib.results",
+    "--cov=core.lib.utils",
+    "--cov-report=term-missing",
+]
+
+[tool.coverage.run]
+branch = true
+source = [
+    "core.lib.analyses",
+    "core.lib.results",
+    "core.lib.utils",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
