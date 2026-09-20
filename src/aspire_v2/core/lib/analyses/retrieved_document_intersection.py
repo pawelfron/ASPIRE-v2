@@ -71,7 +71,7 @@ class RetrievedDocumentInterseciton(Analysis):
         # Compute intersections
         baseline_run = list(
             filter(
-                lambda run: str(run.id) != parameters["baseline_run"],
+                lambda run: str(run.id) == parameters["baseline_run"],
                 retrieval_runs,
             )
         )[0]

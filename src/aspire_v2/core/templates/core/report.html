@@ -51,6 +51,8 @@
     </div>
     {% elif analysis_result.result.type == "plot" %}
     <div id="plot {{analysis_result.analysis_type}}"></div>
+    {% elif analysis_result.result.type == "image" %}
+    <img src="{{ analysis_result.result.value }}" alt="{{ analysis_result.analysis_display_name }}" />
     {% elif analysis_result.result.type == "composite" %} {% for label, subresult in analysis_result.result.value %}
     <div class="mb-3">
       <h5 class="font-semibold">{{ label }}</h5>
@@ -80,6 +82,8 @@
       </div>
       {% elif subresult.type == "plot" %}
       <div id="plot {{analysis_result.analysis_type}}-{{label}}"></div>
+      {% elif subresult.type == "image" %}
+      <img src="{{ subresult.value }}" alt="{{ label }}" />
       {% endif %}
     </div>
     {% endfor %} {% endif %}

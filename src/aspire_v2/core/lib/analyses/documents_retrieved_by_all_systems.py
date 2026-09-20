@@ -14,9 +14,9 @@ class DocumentsRetrievedByAllSystemsForm(AnalysisForm):
         label="Cutoff value", min_value=1, max_value=1000, initial=1
     )
     sample_size = forms.IntegerField(
-        label="Size of the retrived documents sample",
+        label="Size of the retrieved documents sample",
         min_value=1,
-        max_value=10,
+        max_value=100,
         initial=10,
     )
 
