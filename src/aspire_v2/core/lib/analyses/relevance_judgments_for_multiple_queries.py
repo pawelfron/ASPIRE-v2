@@ -96,7 +96,8 @@ class RelevanceJudgmentsForMultipleQueries(Analysis):
         )
 
         relevance_info = df.groupby("doc_id").apply(
-            lambda x: x.groupby("query_id")["relevance"].first().to_dict()
+            lambda x: x.groupby("query_id")["relevance"].first().to_dict(),
+            include_groups=False,
         )
         result["relevance_judgments"] = result["doc_id"].map(relevance_info)
 
