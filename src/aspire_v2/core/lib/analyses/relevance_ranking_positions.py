@@ -54,7 +54,6 @@ class RelevanceRankingPositions(Analysis):
         )
 
         for i, run in enumerate(retrieval_runs, start=1):
-            run_name = run.title
             run_df = run.dataframe
             # Merge run data with qrel data to get relevance information
             merged_df = pd.merge(run_df, qrel, on=["query_id", "doc_id"], how="left")
@@ -78,7 +77,7 @@ class RelevanceRankingPositions(Analysis):
                 heatmap_data.append(row_data)
 
                 hover_row = [
-                    f"Query: {query_id}<br>Rank: {rank}<br>Doc ID: {doc_id}<br>Relevance: {'Unjudged' if rel == -100 else rel}"
+                    f"Query: {query_id}<br>Rank: {rank}<br>Doc ID: {doc_id}<br>Relevance: {'Unjudged' if rel == -100 else rel}"  # noqa: E501
                     for query_id, doc_id, rel in zip(
                         rank_data["query_id"],
                         rank_data["doc_id"],
@@ -141,7 +140,7 @@ class RelevanceRankingPositions(Analysis):
         fig.update_layout(
             height=700 * num_rows,
             width=1400,
-            title_text=f"Document Ranking and Relevance for the Top {ranking_depth} Rank Positions per Experiment",
+            title_text=f"Document Ranking and Relevance for the Top {ranking_depth} Rank Positions per Experiment",  # noqa: E501
             font=dict(size=14),
             legend=dict(
                 orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1

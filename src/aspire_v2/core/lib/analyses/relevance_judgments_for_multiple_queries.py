@@ -63,7 +63,7 @@ class RelevanceJudgmentsForMultipleQueries(Analysis):
                     name=f"Relevance {rel_label}",
                     marker_color=relevance_colors[rel_label],
                     hovertext=[
-                        f"Queries: {', '.join([q for q, r in doc_rel.items() if r == rel_label])}"
+                        f"Queries: {', '.join([q for q, r in doc_rel.items() if r == rel_label])}"  # noqa: E501
                         for doc_rel in multi_query_docs["relevance_judgments"]
                     ],
                     hoverinfo="text+y",
