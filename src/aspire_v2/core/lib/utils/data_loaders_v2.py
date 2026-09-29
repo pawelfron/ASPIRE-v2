@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from ...models import RetrievalTask, RetrievalRun
+from .file_validation import topic_elements
 
 
 def load_qrel_file(retrieval_task: RetrievalTask) -> pd.DataFrame:
@@ -31,7 +32,7 @@ def load_queries_file(retrieval_task: RetrievalTask) -> pd.DataFrame:
     ids = []
     texts = []
 
-    for topic in tree.getroot().findall(".//topic"):
+    for topic in topic_elements(tree.getroot()):
         ids.append(topic.get("number"))
         texts.append("".join(topic.itertext()))
 
