@@ -51,16 +51,19 @@ WORKDIR /app
 
 COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
-COPY --from=builder /app/src /app/src
 
-RUN mkdir -p /ms-playwright && \
+ENV XDG_DATA_HOME=/opt/choreographer-data
+RUN mkdir -p /ms-playwright "$XDG_DATA_HOME" && \
     playwright install --with-deps chromium && \
     plotly_get_chrome -y && \
-    mkdir -p /app/src/aspire_v2/staticfiles && \
-    chown -R aspire:aspire /app /home/aspire /ms-playwright
+    chmod -R a+rX "$XDG_DATA_HOME"
 
+COPY --from=builder /app/src /app/src
 COPY docker-entrypoint.sh docker-entrypoint.dev.sh /app/
-RUN chmod +x /app/docker-entrypoint.sh /app/docker-entrypoint.dev.sh
+
+RUN mkdir -p /app/src/aspire_v2/staticfiles && \
+    chown -R aspire:aspire /app /home/aspire /ms-playwright && \
+    chmod +x /app/docker-entrypoint.sh /app/docker-entrypoint.dev.sh
 
 WORKDIR /app/src/aspire_v2
 
