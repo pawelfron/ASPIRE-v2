@@ -137,10 +137,16 @@ def new_report_parameters(request):
             del request.session["new_report"]
             return redirect("report_status", report_id=report.id)
 
-    forms = {
-        name: form_class(retrieval_task=retrieval_task, retrieval_runs=retrieval_runs)
-        for name, form_class in analysis_forms.items()
-    }
+    forms = [
+        {
+            "name": analysis.name,
+            "form": analysis.form_class(
+                retrieval_task=retrieval_task,
+                retrieval_runs=retrieval_runs,
+            ),
+        }
+        for analysis in report_class.analyses
+    ]
 
     return render(
         request,

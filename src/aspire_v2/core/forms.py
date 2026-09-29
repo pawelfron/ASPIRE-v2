@@ -17,9 +17,9 @@ class RetrievalRunUploadForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user")
         super().__init__(*args, **kwargs)
-        tasks = RetrievalTask.objects.filter(author=user)
         self.fields["ir_task"].label = "Retrieval task"
-        self.fields["ir_task"].choices = [(task.id, task.title) for task in tasks]
+        self.fields["ir_task"].queryset = RetrievalTask.objects.filter(author=user)
+        self.fields["ir_task"].empty_label = "---------"
 
 
 class NewReportGeneralForm(forms.Form):

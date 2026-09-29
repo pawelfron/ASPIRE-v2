@@ -6,11 +6,11 @@
 <div>
   <h1 class="text-3xl font-bold mb-3">Create new report - set parameters</h1>
   <form method="POST">
-    {% csrf_token %} {% for key, form in forms.items %}
+    {% csrf_token %} {% for entry in forms %}
     <div class="fieldset rounded-box border border-base-200 w-80 p-4 mb-3">
-      <h3 class="text-xl font-semibold">{{ key }}</h3>
+      <h3 class="text-xl font-semibold">{{ entry.name }}</h3>
       <div>
-        {% for field in form %}
+        {% for field in entry.form %}
         <div class="mb-1">
           <label for="{{ field.id_for_label }}" class="label block">{{ field.label }}</label>
           {{ field|add_class:"input" }} {% if field.help_text %}
@@ -23,6 +23,8 @@
             {% endfor %}
           </ul>
         </div>
+        {% empty %}
+        <p>This analysis does not define any parameters.</p>
         {% endfor %}
       </div>
     </div>
