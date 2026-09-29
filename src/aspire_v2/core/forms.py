@@ -1,12 +1,35 @@
 from django import forms
 from .models import RetrievalTask, RetrievalRun
 from .lib.reports import all_reports
+from .lib.utils.file_validation import (
+    QRELS_HELP,
+    RUN_HELP,
+    TOPICS_HELP,
+    validate_qrels_file,
+    validate_run_file,
+    validate_topics_file,
+)
 
 
 class RetrievalTaskUploadForm(forms.ModelForm):
     class Meta:
         model = RetrievalTask
         fields = ("title", "description", "qrels", "topics")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["qrels"].help_text = QRELS_HELP
+        self.fields["topics"].help_text = TOPICS_HELP
+
+    def clean_qrels(self):
+        uploaded = self.cleaned_data["qrels"]
+        validate_qrels_file(uploaded)
+        return uploaded
+
+    def clean_topics(self):
+        uploaded = self.cleaned_data["topics"]
+        validate_topics_file(uploaded)
+        return uploaded
 
 
 class RetrievalRunUploadForm(forms.ModelForm):
@@ -20,6 +43,12 @@ class RetrievalRunUploadForm(forms.ModelForm):
         self.fields["ir_task"].label = "Retrieval task"
         self.fields["ir_task"].queryset = RetrievalTask.objects.filter(author=user)
         self.fields["ir_task"].empty_label = "---------"
+        self.fields["file"].help_text = RUN_HELP
+
+    def clean_file(self):
+        uploaded = self.cleaned_data["file"]
+        validate_run_file(uploaded)
+        return uploaded
 
 
 class NewReportGeneralForm(forms.Form):
