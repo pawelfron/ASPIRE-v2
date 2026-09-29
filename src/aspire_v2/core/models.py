@@ -12,7 +12,7 @@ import uuid
 class Report(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=250)
-    description = models.TextField(max_length=500)
+    description = models.TextField(max_length=500, blank=True)
     report_type = models.CharField(max_length=100)
     date = models.DateTimeField(auto_now_add=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="reports")
@@ -40,7 +40,7 @@ class AnalysisResult(models.Model):
 class RetrievalTask(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=100)
-    description = models.TextField(max_length=500)
+    description = models.TextField(max_length=500, blank=True)
     qrels = models.FileField(upload_to="qrels")
     topics = models.FileField(upload_to="topics")
     date = models.DateField(auto_now_add=True)
@@ -68,7 +68,7 @@ class RetrievalTask(models.Model):
 class RetrievalRun(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=100)
-    description = models.TextField(max_length=500)
+    description = models.TextField(max_length=500, blank=True)
     file = models.FileField(upload_to="runs")
     date = models.DateField(auto_now_add=True)
     ir_task = models.ForeignKey(

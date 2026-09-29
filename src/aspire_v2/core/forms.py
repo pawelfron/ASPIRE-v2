@@ -25,7 +25,10 @@ class RetrievalRunUploadForm(forms.ModelForm):
 class NewReportGeneralForm(forms.Form):
     title = forms.CharField(label="Title", max_length=100)
     description = forms.CharField(
-        label="Description", max_length=500, widget=forms.Textarea()
+        label="Description",
+        max_length=500,
+        required=False,
+        widget=forms.Textarea(),
     )
     report_type = forms.ChoiceField(
         label="Report type",
