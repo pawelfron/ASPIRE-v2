@@ -17,7 +17,7 @@
       <div id="pdf-status" class="pt-2 mx-3 {% if not pdf_is_generating %} hidden {% endif %}">
         <span class="loading loading-spinner loading-md" aria-hidden="true"></span>
       </div>
-      <form id="pdf-generate" method="POST" class="{% if report.pdf or pdf_is_generating %} hidden {% endif %}">
+      <form id="pdf-generate" method="POST" class="{% if report.pdf or pdf_is_generating or recalculating_ids %} hidden {% endif %}">
         {% csrf_token %}
         <input type="submit" class="btn btn-accent" value="Generate PDF" />
       </form>
@@ -27,8 +27,17 @@
 
   {% for analysis_result in report.results.all %}
   <div class="mb-5">
-    <h3 class="font-semibold text-lg">{{ analysis_result.analysis_display_name }}</h3>
-    {% if analysis_result.result.type == "value" %}
+    <div class="flex items-center justify-between gap-3 mb-2">
+      <h3 class="font-semibold text-lg">{{ analysis_result.analysis_display_name }}</h3>
+      {% if analysis_result.id not in recalculating_ids %}
+      <a href="{% url 'edit_analysis_parameters' report.id analysis_result.id %}" class="btn btn-sm btn-secondary"
+        >Parameters</a
+      >
+      {% endif %}
+    </div>
+    {% if analysis_result.id in recalculating_ids %}
+    <span class="loading loading-spinner loading-md" aria-hidden="true"></span>
+    {% elif analysis_result.result.type == "value" %}
     <span>{{ analysis_result.result.value }}</span>
     {% elif analysis_result.result.type == "table" %}
     <div class="overflow-x-auto rounded-box border border-base-content/5">
@@ -126,4 +135,17 @@
     }
   });
 </script>
-{% endif %} {% endblock %}
+{% endif %}
+{% if recalculating_ids %}
+<script>
+  const reportIdForRecalc = JSON.parse(document.getElementById('report_id').textContent);
+  const recalcSocket = new WebSocket(`/ws/report_status/${reportIdForRecalc}/`);
+  recalcSocket.addEventListener('message', (event) => {
+    const data = JSON.parse(event.data);
+    if (data.type == 'analysis_recalculated') {
+      window.location.reload();
+    }
+  });
+</script>
+{% endif %}
+{% endblock %}

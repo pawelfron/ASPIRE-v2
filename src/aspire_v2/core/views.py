@@ -1,3 +1,5 @@
+import json
+
 from django.shortcuts import render, redirect, get_object_or_404, get_list_or_404
 from django.urls import reverse_lazy
 from django.views.generic.list import ListView
@@ -5,10 +7,19 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
-from django.http import FileResponse
+from django.http import FileResponse, Http404
+from django.core.cache import cache
+from django.core.serializers.json import DjangoJSONEncoder
 
-from .tasks import create_report, generate_pdf
-from .models import Report, RetrievalRun, RetrievalTask
+from .tasks import (
+    create_report,
+    generate_pdf,
+    recalculate_analysis,
+    recalculating_cache_key,
+    invalidate_report_pdf,
+    RECALCULATING_CACHE_TIMEOUT,
+)
+from .models import Report, AnalysisResult, RetrievalRun, RetrievalTask
 from .forms import (
     RetrievalTaskUploadForm,
     RetrievalRunUploadForm,
@@ -17,6 +28,7 @@ from .forms import (
 )
 
 from .lib.reports import all_reports
+from .lib.analyses import all_analyses
 
 
 class ReportListView(LoginRequiredMixin, ListView):
@@ -172,11 +184,23 @@ def report_status(request, report_id):
     )
 
 
+def _recalculating_ids(results) -> list:
+    return [
+        result.id
+        for result in results
+        if cache.get(recalculating_cache_key(result.id))
+    ]
+
+
 @login_required
 def view_report(request, report_id: str):
     report = get_object_or_404(Report, pk=report_id)
+    results = list(report.results.all())
+    recalculating_ids = _recalculating_ids(results)
     plot_data = {}
-    for result in report.results.all():
+    for result in results:
+        if result.id in recalculating_ids:
+            continue
         data = result.result
         if data["type"] == "plot":
             plot_data[result.analysis_type] = data
@@ -184,17 +208,11 @@ def view_report(request, report_id: str):
             for label, sub_result in data["value"]:
                 if sub_result["type"] == "plot":
                     plot_data[f"{result.analysis_type}-{label}"] = sub_result
-    if request.method == "POST" and not report.pdf:
+
+    pdf_is_generating = False
+    if request.method == "POST" and not report.pdf and not recalculating_ids:
         generate_pdf.delay(report_id)
-        return render(
-            request,
-            "core/report.html",
-            {
-                "report": report,
-                "plot_data": plot_data,
-                "pdf_is_generating": True,
-            },
-        )
+        pdf_is_generating = True
 
     return render(
         request,
@@ -202,7 +220,56 @@ def view_report(request, report_id: str):
         {
             "report": report,
             "plot_data": plot_data,
-            "pdf_is_generating": False,
+            "pdf_is_generating": pdf_is_generating,
+            "recalculating_ids": recalculating_ids,
+        },
+    )
+
+
+@login_required
+def edit_analysis_parameters(request, report_id: str, analysis_id: str):
+    report = get_object_or_404(Report, pk=report_id)
+    analysis_result = get_object_or_404(
+        AnalysisResult, pk=analysis_id, report=report
+    )
+    if cache.get(recalculating_cache_key(analysis_result.id)):
+        return redirect("view_report", report_id=report.id)
+
+    retrieval_runs = list(report.retrieval_runs.all())
+    if not retrieval_runs:
+        raise Http404
+    retrieval_task = retrieval_runs[0].ir_task
+
+    analysis_class = all_analyses.get(analysis_result.analysis_type)
+    if analysis_class is None:
+        raise Http404
+    form_class = analysis_class.form_class
+
+    form = form_class(
+        request.POST or None,
+        initial=analysis_result.parameters,
+        retrieval_task=retrieval_task,
+        retrieval_runs=retrieval_runs,
+    )
+
+    if request.method == "POST" and form.is_valid():
+        parameters = json.loads(json.dumps(form.cleaned_data, cls=DjangoJSONEncoder))
+        invalidate_report_pdf(report)
+        cache.set(
+            recalculating_cache_key(analysis_result.id),
+            True,
+            timeout=RECALCULATING_CACHE_TIMEOUT,
+        )
+        recalculate_analysis.delay_on_commit(str(analysis_result.id), parameters)
+        return redirect("view_report", report_id=report.id)
+
+    return render(
+        request,
+        "core/edit_analysis_parameters.html",
+        {
+            "report": report,
+            "analysis_result": analysis_result,
+            "form": form,
         },
     )
 
