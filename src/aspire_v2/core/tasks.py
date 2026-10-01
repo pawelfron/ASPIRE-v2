@@ -3,6 +3,8 @@ from django.shortcuts import get_list_or_404, get_object_or_404
 from django.contrib.auth import get_user_model
 from django.template.loader import render_to_string
 from django.core.files.base import ContentFile
+from django.core.cache import cache
+from django.db.models import F
 from playwright.sync_api import sync_playwright
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
@@ -14,6 +16,46 @@ import base64
 import json
 
 User = get_user_model()
+
+RECALCULATING_CACHE_TIMEOUT = 60 * 60
+
+
+def recalculating_cache_key(analysis_result_id) -> str:
+    return f"analysis-recalculating-{analysis_result_id}"
+
+
+def report_is_recalculating(report: Report) -> bool:
+    return any(
+        cache.get(recalculating_cache_key(result_id))
+        for result_id in report.results.values_list("id", flat=True)
+    )
+
+
+def invalidate_report_pdf(report: Report) -> None:
+    """Remove the PDF and bump the revision so an in-flight render is discarded."""
+    Report.objects.filter(pk=report.pk).update(
+        content_revision=F("content_revision") + 1
+    )
+    report.refresh_from_db(fields=["pdf"])
+    if report.pdf:
+        report.pdf.delete(save=False)
+        report.pdf = None
+        report.save(update_fields=["pdf"])
+
+
+def _discard_pdf(channel_layer, report_id: str, report: Report) -> None:
+    report.refresh_from_db(fields=["pdf"])
+    if report.pdf:
+        report.pdf.delete(save=False)
+        report.pdf = None
+        report.save(update_fields=["pdf"])
+    async_to_sync(channel_layer.group_send)(
+        f"pdf.{report_id}",
+        {
+            "type": "pdf_error",
+            "error": "Report changed while the PDF was generating.",
+        },
+    )
 
 
 @shared_task
@@ -67,10 +109,47 @@ def create_report(
 
 
 @shared_task
+def recalculate_analysis(analysis_result_id: str, parameters: dict):
+    channel_layer = get_channel_layer()
+    analysis_result = get_object_or_404(AnalysisResult, pk=analysis_result_id)
+    report = analysis_result.report
+
+    try:
+        retrieval_runs = list(report.retrieval_runs.all())
+        retrieval_task = retrieval_runs[0].ir_task
+        analysis = create_analysis(analysis_result.analysis_type)
+        result = analysis.execute(
+            retrieval_task=retrieval_task,
+            retrieval_runs=retrieval_runs,
+            **parameters,
+        )
+        analysis_result.parameters = parameters
+        analysis_result.result = result.serialize()
+        analysis_result.save(update_fields=["parameters", "result"])
+        Report.objects.filter(pk=report.pk).update(
+            content_revision=F("content_revision") + 1
+        )
+    finally:
+        cache.delete(recalculating_cache_key(analysis_result_id))
+        async_to_sync(channel_layer.group_send)(
+            f"report.{report.id}",
+            {
+                "type": "analysis_recalculated",
+                "analysis_id": str(analysis_result_id),
+            },
+        )
+
+
+@shared_task
 def generate_pdf(report_id: str):
     channel_layer = get_channel_layer()
 
     report = get_object_or_404(Report, pk=report_id)
+    revision = report.content_revision
+    if report_is_recalculating(report):
+        _discard_pdf(channel_layer, report_id, report)
+        return "Discarded"
+
     data = []
     for result in report.results.all():
         if result.result["type"] == "plot":
@@ -137,6 +216,11 @@ def generate_pdf(report_id: str):
         page.wait_for_timeout(2000)
         pdf_bytes = page.pdf(format="A4", print_background=True)
         browser.close()
+
+    report.refresh_from_db()
+    if report.content_revision != revision or report_is_recalculating(report):
+        _discard_pdf(channel_layer, report_id, report)
+        return "Discarded"
 
     report.pdf.save(f"report_{report_id}.pdf", ContentFile(pdf_bytes), save=True)
 

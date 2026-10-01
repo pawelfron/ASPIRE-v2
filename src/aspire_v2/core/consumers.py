@@ -41,6 +41,14 @@ class ReportGenerationConsumer(AsyncJsonWebsocketConsumer):
             close=True,
         )
 
+    async def analysis_recalculated(self, event):
+        await self.send_json(
+            {
+                "type": "analysis_recalculated",
+                "analysis_id": event["analysis_id"],
+            }
+        )
+
 
 class PdfGenerationConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):

@@ -2,6 +2,7 @@ from django.urls import path
 
 from .views import (
     view_report,
+    edit_analysis_parameters,
     ReportListView,
     new_report_general,
     new_report_runs,
@@ -29,6 +30,11 @@ urlpatterns = [
     path("new_report_parameters", new_report_parameters, name="new_report_parameters"),
     path("new_report_cancel", new_report_cancel, name="new_report_cancel"),
     path("view_report/<uuid:report_id>", view_report, name="view_report"),
+    path(
+        "view_report/<uuid:report_id>/analysis/<uuid:analysis_id>/parameters",
+        edit_analysis_parameters,
+        name="edit_analysis_parameters",
+    ),
     path("report_status/<uuid:report_id>", report_status, name="report_status"),
     path("confirm_delete/<uuid:pk>", ReportDeleteView.as_view(), name="report_delete"),
     # path("view_report/<uuid:report_id>/pdf", generate_pdf_view, name="generate_pdf"),

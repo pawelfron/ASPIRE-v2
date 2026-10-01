@@ -17,6 +17,7 @@ class Report(models.Model):
     date = models.DateTimeField(auto_now_add=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="reports")
     pdf = models.FileField(upload_to="pdfs", null=True)
+    content_revision = models.PositiveIntegerField(default=0)
 
 
 class AnalysisResult(models.Model):
