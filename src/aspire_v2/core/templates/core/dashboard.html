@@ -1,27 +1,26 @@
 {% extends "base/base.html" %}
-<!---->
+
 {% block title %} Dashboard - ASPIRE {% endblock %}
-<!---->
+
+{% block header %}
+<h1 class="text-3xl font-bold mb-3">Generated reports</h1>
+<a href="{% url 'new_report_general' %}" class="btn btn-success">New report</a>
+{% endblock %}
+
 {% block content %}
-<div>
-  <h1 class="text-3xl font-bold mb-3">Generated reports</h1>
-
-  <a href="{% url 'new_report_general' %}" class="btn btn-success">New report</a>
-
-  <div class="flex flex-wrap gap-2 mt-5 mb-5">
-    {% for report in reports %}
-    <div class="card card-border bg-base-100 w-80">
-      <div class="card-body">
-        <h2 class="card-title">{{ report.title }}</h2>
-        <p class="font-light text-sm">{{ report.date }}</p>
-        <div class="card-actions justify-end">
-          <a href="{% url 'view_report' report.id %}" class="btn btn-primary">Open</a>
-        </div>
+<div class="flex flex-wrap gap-2 md:justify-start justify-center mt-5 mb-5">
+  {% for report in reports %}
+  <div class="card card-border bg-base-100 w-80">
+    <div class="card-body">
+      <h2 class="card-title">{{ report.title }}</h2>
+      <p class="font-light text-sm">{{ report.date }}</p>
+      <div class="card-actions justify-end">
+        <a href="{% url 'view_report' report.id %}" class="btn btn-primary">Open</a>
       </div>
     </div>
-    {% endfor %}
   </div>
-
-  {% include 'includes/pagination.html' %}
+  {% endfor %}
 </div>
+
+{% include 'includes/pagination.html' %}
 {% endblock %}

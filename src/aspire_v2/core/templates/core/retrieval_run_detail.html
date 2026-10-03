@@ -1,16 +1,21 @@
 {% extends "base/base.html" %}
-<!---->
+
 {% block title %} {{ run.title }} - ASPIRE {% endblock %}
-<!---->
+
+{% block header %}
+<h1 class="text-3xl font-bold mb-3">{{ run.title }}</h1>
+
+<p class="font-light text-sm mb-3">{{ run.date }}</p>
+
+<div class="flex md:flex-row flex-col justify-center gap-2 mb-5">
+  <a href="{% url 'download_run_file' run.id %}" class="btn btn-accent">Download run</a>
+  <a href="{% url 'retrieval_run_edit' run.id %}" class="btn btn-secondary">Edit</a>
+  <a href="{% url 'retrieval_run_delete' run.id %}" class="btn btn-error">Delete</a>
+</div>
+{% endblock %}
+
 {% block content %}
-<div>
-  <h1 class="text-3xl font-bold mb-3">{{ run.title }}</h1>
+<div class="text-center">
   <p>{{ run.description }}</p>
-  <p class="font-light text-sm mb-5">Uploaded at: {{ run.date }}</p>
-  <div class="flex flex-row gap-2">
-    <a href="{% url 'download_run_file' run.id %}" class="btn btn-accent">Download run</a>
-    <a href="{% url 'retrieval_run_edit' run.id %}" class="btn btn-secondary">Edit</a>
-    <a href="{% url 'retrieval_run_delete' run.id %}" class="btn btn-error">Delete</a>
-  </div>
 </div>
 {% endblock %}
