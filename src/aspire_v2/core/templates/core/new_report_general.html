@@ -1,77 +1,76 @@
-{% extends 'base/base.html' %}
-<!---->
+{% extends 'base/core.html' %}
+
 {% block title %} New report - ASPIRE {% endblock %}
-<!---->
+
+{% block header-text %} Create new report {% endblock %}
+
 {% block content %}
-<div>
-  <h1 class="text-3xl font-bold mb-3">Create new report</h1>
-  <form method="POST">
-    {% csrf_token %}
-    <div class="mb-3">
-      <label for="{{ form.title.id_for_label }}" class="label block">{{ form.title.label }}</label>
-      {{ form.title|add_class:"input" }} {% if form.title.help_text %}
-      <p class="label">{{ form.title.help_text }}</p>
-      {% endif %}
-
-      <ul class="list max-w-80 text-error">
-        {% for error in form.title.errors %}
-        <li class="list-row text-sm p-1">{{ error }}</li>
-        {% endfor %}
-      </ul>
-    </div>
-
-    <div class="mb-3">
-      <label for="{{ form.description.id_for_label }}" class="label block">{{ form.description.label }}</label>
-      {{ form.description|add_class:"textarea h-32" }} {% if form.description.help_text %}
-      <p class="label">{{ form.description.help_text }}</p>
-      {% endif %}
-
-      <ul class="list max-w-80 text-error">
-        {% for error in form.description.errors %}
-        <li class="list-row text-sm p-1">{{ error }}</li>
-        {% endfor %}
-      </ul>
-    </div>
-
-    <div class="mb-3">
-      <label for="{{ form.task.id_for_label }}" class="label block">{{ form.task.label }}</label>
-      {{ form.task|add_class:"select" }} {% if form.task.help_text %}
-      <p class="label">{{ form.task.help_text }}</p>
-      {% endif %}
-
-      <ul class="list max-w-80 text-error">
-        {% for error in form.task.errors %}
-        <li class="list-row text-sm p-1">{{ error }}</li>
-        {% endfor %}
-      </ul>
-    </div>
-
-    <div class="mb-3">
-      <fieldset class="fieldset rounded-box border border-base-200 w-80 p-4">
-        <legend class="fieldset-legend">{{ form.report_type.label }}</legend>
-        {% for radio in form.report_type %}
-        <label for="{{ radio.id_for_label }}"> {{ radio.tag }} {{ radio.choice_label }} </label>
-        {% endfor %}
-      </fieldset>
-
-      <ul class="list max-w-80 text-error">
-        {% for error in form.task.errors %}
-        <li class="list-row text-sm p-1">{{ error }}</li>
-        {% endfor %}
-      </ul>
-    </div>
+<form method="POST" class="block text-center">
+  {% csrf_token %}
+  <div class="mb-3">
+    <label for="{{ form.title.id_for_label }}" class="label block">{{ form.title.label }}</label>
+    {{ form.title|add_class:"input" }} {% if form.title.help_text %}
+    <p class="label">{{ form.title.help_text }}</p>
+    {% endif %}
 
     <ul class="list max-w-80 text-error">
-      {% for error in form.non_field_errors %}
+      {% for error in form.title.errors %}
       <li class="list-row text-sm p-1">{{ error }}</li>
       {% endfor %}
     </ul>
+  </div>
 
-    <div class="flex justify-between w-80">
-      <a href="#" class="btn btn-secondary" disabled>Previous</a>
-      <a href="{% url 'new_report_cancel' %}" class="btn btn-error">Cancel</a>
-      <input type="submit" value="Next" class="btn btn-primary" />
-    </div>
-  </form>
-</div>
+  <div class="mb-3">
+    <label for="{{ form.description.id_for_label }}" class="label block">{{ form.description.label }}</label>
+    {{ form.description|add_class:"textarea h-32" }} {% if form.description.help_text %}
+    <p class="label">{{ form.description.help_text }}</p>
+    {% endif %}
+
+    <ul class="list max-w-80 text-error">
+      {% for error in form.description.errors %}
+      <li class="list-row text-sm p-1">{{ error }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="mb-3">
+    <label for="{{ form.task.id_for_label }}" class="label block">{{ form.task.label }}</label>
+    {{ form.task|add_class:"select" }} {% if form.task.help_text %}
+    <p class="label">{{ form.task.help_text }}</p>
+    {% endif %}
+
+    <ul class="list max-w-80 text-error">
+      {% for error in form.task.errors %}
+      <li class="list-row text-sm p-1">{{ error }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="mb-3">
+    <fieldset class="fieldset rounded-box border border-base-200 w-80 p-4 mx-auto">
+      <legend class="fieldset-legend">{{ form.report_type.label }}</legend>
+      {% for radio in form.report_type %}
+      <label for="{{ radio.id_for_label }}"> {{ radio.tag }} {{ radio.choice_label }} </label>
+      {% endfor %}
+    </fieldset>
+
+    <ul class="list max-w-80 text-error">
+      {% for error in form.task.errors %}
+      <li class="list-row text-sm p-1">{{ error }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <ul class="list max-w-80 text-error">
+    {% for error in form.non_field_errors %}
+    <li class="list-row text-sm p-1">{{ error }}</li>
+    {% endfor %}
+  </ul>
+
+  <div class="flex gap-2 justify-center">
+    <a href="#" class="btn btn-secondary" disabled>Previous</a>
+    <a href="{% url 'new_report_cancel' %}" class="btn btn-error">Cancel</a>
+    <input type="submit" value="Next" class="btn btn-primary" />
+  </div>
+</form>
 {% endblock %}

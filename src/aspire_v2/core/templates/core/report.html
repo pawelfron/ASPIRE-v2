@@ -1,59 +1,85 @@
-{% extends "base/base.html" %}
-<!---->
+{% extends "base/core.html" %}
+
 {% block title %} {{ report.title }} - ASPIRE {% endblock %}
-<!---->
+
+{% block header-text %} {{ report.title }} {% endblock %}
+{% block header-date %} {{ report.date }} {% endblock %}
+{% block header-actions %}
+<a id="pdf-download" href="{% url 'download_pdf' report.id %}" class="btn btn-accent {% if not report.pdf %} hidden {% endif %}">
+  Download PDF
+</a>
+<div id="pdf-status" class="pt-2 mx-3 {% if not pdf_is_generating %} hidden {% endif %}">
+  <span class="loading loading-spinner loading-md" aria-hidden="true"></span>
+</div>
+<form id="pdf-generate" method="POST" class="{% if report.pdf or pdf_is_generating or recalculating_ids %} hidden {% endif %}">
+  {% csrf_token %}
+  <input type="submit" class="btn btn-accent" value="Generate PDF" />
+</form>
+<a href="{% url 'report_edit' report.id %}" class="btn btn-secondary">Edit</a>
+<a href="{% url 'report_delete' report.id %}" class="btn btn-error">Delete</a>
+{% endblock %}
+
 {% block content %}
-<div class="max-w-3/4">
-  <div class="flex justify-between">
-    <div>
-      <h1 class="text-3xl font-bold mb-3">{{ report.title }}</h1>
-      <p>{{ report.description }}</p>
-      <p class="font-light text-sm mb-5">{{ report.date }}</p>
-    </div>
+<p class="mb-3">{{ report.description }}</p>
 
-    <div class="flex flex-row gap-2">
-      <a id="pdf-download" href="{% url 'download_pdf' report.id %}" class="btn btn-accent {% if not report.pdf %} hidden {% endif %}"
-        >Download PDF</a
-      >
-      <div id="pdf-status" class="pt-2 mx-3 {% if not pdf_is_generating %} hidden {% endif %}">
-        <span class="loading loading-spinner loading-md" aria-hidden="true"></span>
-      </div>
-      <form id="pdf-generate" method="POST" class="{% if report.pdf or pdf_is_generating or recalculating_ids %} hidden {% endif %}">
-        {% csrf_token %}
-        <input type="submit" class="btn btn-accent" value="Generate PDF" />
-      </form>
-      <a href="{% url 'report_edit' report.id %}" class="btn btn-secondary">Edit</a>
-      <a href="{% url 'report_delete' report.id %}" class="btn btn-error">Delete</a>
-    </div>
+{% for analysis_result in report.results.all %}
+<div class="mb-5">
+  <div class="flex items-center justify-between gap-3 mb-2">
+    <h3 class="font-semibold text-lg">{{ analysis_result.analysis_display_name }}</h3>
+    {% if analysis_result.id not in recalculating_ids %}
+    <a href="{% url 'edit_analysis_parameters' report.id analysis_result.id %}" class="btn btn-sm btn-secondary"
+      >Parameters</a
+    >
+    {% endif %}
   </div>
-
-  {% for analysis_result in report.results.all %}
-  <div class="mb-5">
-    <div class="flex items-center justify-between gap-3 mb-2">
-      <h3 class="font-semibold text-lg">{{ analysis_result.analysis_display_name }}</h3>
-      {% if analysis_result.id not in recalculating_ids %}
-      <a href="{% url 'edit_analysis_parameters' report.id analysis_result.id %}" class="btn btn-sm btn-secondary"
-        >Parameters</a
-      >
-      {% endif %}
-    </div>
-    {% if analysis_result.id in recalculating_ids %}
-    <span class="loading loading-spinner loading-md" aria-hidden="true"></span>
-    {% elif analysis_result.result.type == "value" %}
-    <span>{{ analysis_result.result.value }}</span>
-    {% elif analysis_result.result.type == "table" %}
+  {% if analysis_result.id in recalculating_ids %}
+  <span class="loading loading-spinner loading-md" aria-hidden="true"></span>
+  {% elif analysis_result.result.type == "value" %}
+  <span>{{ analysis_result.result.value }}</span>
+  {% elif analysis_result.result.type == "table" %}
+  <div class="overflow-x-auto rounded-box border border-base-content/5">
+    <table class="table">
+      <thead>
+        <tr class="bg-base-200">
+          <th></th>
+          {% for column in analysis_result.result.value.columns %}
+          <th>{{ column }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in analysis_result.result.value.data_with_index %}
+        <tr>
+          {% for value in row %}
+          <td>{{ value }}</td>
+          {% endfor %}
+        </tr>
+        {% endfor%}
+      </tbody>
+    </table>
+  </div>
+  {% elif analysis_result.result.type == "plot" %}
+  <div id="plot {{analysis_result.analysis_type}}"></div>
+  {% elif analysis_result.result.type == "image" %}
+  <img src="{{ analysis_result.result.value }}" alt="{{ analysis_result.analysis_display_name }}" />
+  {% elif analysis_result.result.type == "composite" %} {% for label, subresult in analysis_result.result.value %}
+  <div class="mb-3">
+    <h5 class="font-semibold">{{ label }}</h5>
+    {% if subresult.type == "value" %}
+    <span>{{ subresult.value }}</span>
+    {% elif subresult.type == "table" %}
     <div class="overflow-x-auto rounded-box border border-base-content/5">
       <table class="table">
         <thead>
           <tr class="bg-base-200">
             <th></th>
-            {% for column in analysis_result.result.value.columns %}
+            {% for column in subresult.value.columns %}
             <th>{{ column }}</th>
             {% endfor %}
           </tr>
         </thead>
         <tbody>
-          {% for row in analysis_result.result.value.data_with_index %}
+          {% for row in subresult.value.data_with_index %}
           <tr>
             {% for value in row %}
             <td>{{ value }}</td>
@@ -63,47 +89,15 @@
         </tbody>
       </table>
     </div>
-    {% elif analysis_result.result.type == "plot" %}
-    <div id="plot {{analysis_result.analysis_type}}"></div>
-    {% elif analysis_result.result.type == "image" %}
-    <img src="{{ analysis_result.result.value }}" alt="{{ analysis_result.analysis_display_name }}" />
-    {% elif analysis_result.result.type == "composite" %} {% for label, subresult in analysis_result.result.value %}
-    <div class="mb-3">
-      <h5 class="font-semibold">{{ label }}</h5>
-      {% if subresult.type == "value" %}
-      <span>{{ subresult.value }}</span>
-      {% elif subresult.type == "table" %}
-      <div class="overflow-x-auto rounded-box border border-base-content/5">
-        <table class="table">
-          <thead>
-            <tr class="bg-base-200">
-              <th></th>
-              {% for column in subresult.value.columns %}
-              <th>{{ column }}</th>
-              {% endfor %}
-            </tr>
-          </thead>
-          <tbody>
-            {% for row in subresult.value.data_with_index %}
-            <tr>
-              {% for value in row %}
-              <td>{{ value }}</td>
-              {% endfor %}
-            </tr>
-            {% endfor%}
-          </tbody>
-        </table>
-      </div>
-      {% elif subresult.type == "plot" %}
-      <div id="plot {{analysis_result.analysis_type}}-{{label}}"></div>
-      {% elif subresult.type == "image" %}
-      <img src="{{ subresult.value }}" alt="{{ label }}" />
-      {% endif %}
-    </div>
-    {% endfor %} {% endif %}
+    {% elif subresult.type == "plot" %}
+    <div id="plot {{analysis_result.analysis_type}}-{{label}}"></div>
+    {% elif subresult.type == "image" %}
+    <img src="{{ subresult.value }}" alt="{{ label }}" />
+    {% endif %}
   </div>
-  {% endfor %}
+  {% endfor %} {% endif %}
 </div>
+{% endfor %}
 {% endblock %}
 <!---->
 {% block scripts%}

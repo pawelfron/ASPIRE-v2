@@ -1,38 +1,35 @@
-{% extends 'base/base.html' %}
-<!---->
+{% extends 'base/core.html' %}
+
 {% block title %} {{ analysis_result.analysis_display_name }} parameters - ASPIRE {% endblock %}
-<!---->
+
+{% block header-text %} {{ analysis_result.analysis_display_name }} {% endblock %}
+
 {% block content %}
-<div>
-  <h1 class="text-3xl font-bold mb-3">{{ analysis_result.analysis_display_name }}</h1>
-  <form method="POST">
-    {% csrf_token %}
-    <div class="fieldset rounded-box border border-base-200 w-80 p-4 mb-3">
-      <h3 class="text-xl font-semibold">Parameters</h3>
-      <div>
-        {% for field in form %}
-        <div class="mb-1">
-          <label for="{{ field.id_for_label }}" class="label block">{{ field.label }}</label>
-          {{ field|add_class:"input" }} {% if field.help_text %}
-          <p class="label">{{ field.help_text }}</p>
-          {% endif %}
+<form method="POST" class="block text-center">
+  {% csrf_token %}
 
-          <ul class="list max-w-80 text-error">
-            {% for error in field.errors %}
-            <li class="list-row text-sm p-1">{{ error }}</li>
-            {% endfor %}
-          </ul>
-        </div>
-        {% empty %}
-        <p>This analysis does not define any parameters.</p>
+  <div>
+    {% for field in form %}
+    <div class="mb-3">
+      <label for="{{ field.id_for_label }}" class="label block">{{ field.label }}</label>
+      {{ field|add_class:"input" }} {% if field.help_text %}
+      <p class="label">{{ field.help_text }}</p>
+      {% endif %}
+
+      <ul class="list max-w-80 text-error">
+        {% for error in field.errors %}
+        <li class="list-row text-sm p-1">{{ error }}</li>
         {% endfor %}
-      </div>
+      </ul>
     </div>
+    {% empty %}
+    <p>This analysis does not define any parameters.</p>
+    {% endfor %}
+  </div>
 
-    <div class="flex justify-between w-80">
-      <a href="{% url 'view_report' report.id %}" class="btn btn-secondary">Cancel</a>
-      <input type="submit" value="Recalculate" class="btn btn-primary" />
-    </div>
-  </form>
-</div>
+  <div class="flex gap-2 justify-center">
+    <a href="{% url 'view_report' report.id %}" class="btn btn-secondary">Cancel</a>
+    <input type="submit" value="Recalculate" class="btn btn-primary" />
+  </div>
+</form>
 {% endblock %}

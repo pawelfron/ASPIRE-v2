@@ -10,12 +10,16 @@
   </head>
   <body>
     <div class="bg-base-200 h-screen flex justify-center">
-      <div class="min-w-80 mt-16">
+      <div class="min-w-md mt-16">
         <div class="text-center">
           <a href="{% url 'index' %}" class="btn btn-ghost text-xl"> ASPIRE </a>
         </div>
 
-        {% block content %}{% endblock %}
+        <header class="text-lg mb-5 divider">{% block header-text %}{% endblock %}</header>
+
+        <div class="text-center">
+          {% block content %}{% endblock %}
+        </div>
       </div>
     </div>
 
