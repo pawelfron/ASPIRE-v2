@@ -7,6 +7,7 @@
   <div class="flex justify-between">
     <div>
       <h1 class="text-3xl font-bold mb-3">{{ report.title }}</h1>
+      <p>{{ report.description }}</p>
       <p class="font-light text-sm mb-5">{{ report.date }}</p>
     </div>
 
@@ -21,6 +22,7 @@
         {% csrf_token %}
         <input type="submit" class="btn btn-accent" value="Generate PDF" />
       </form>
+      <a href="{% url 'report_edit' report.id %}" class="btn btn-secondary">Edit</a>
       <a href="{% url 'report_delete' report.id %}" class="btn btn-error">Delete</a>
     </div>
   </div>

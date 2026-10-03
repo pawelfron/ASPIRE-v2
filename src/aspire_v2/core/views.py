@@ -1,10 +1,11 @@
 import json
+from pathlib import Path
 
 from django.shortcuts import render, redirect, get_object_or_404, get_list_or_404
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, DeleteView
+from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.http import FileResponse, Http404
@@ -22,7 +23,10 @@ from .tasks import (
 from .models import Report, AnalysisResult, RetrievalRun, RetrievalTask
 from .forms import (
     RetrievalTaskUploadForm,
+    RetrievalTaskMetadataForm,
     RetrievalRunUploadForm,
+    RetrievalRunMetadataForm,
+    ReportMetadataForm,
     NewReportGeneralForm,
     NewReportRunsForm,
 )
@@ -45,6 +49,38 @@ class ReportDeleteView(LoginRequiredMixin, DeleteView):
     model = Report
     success_url = reverse_lazy("dashboard")
     template_name = "core/report_confirm_delete.html"
+
+
+class ReportEditView(LoginRequiredMixin, UpdateView):
+    model = Report
+    form_class = ReportMetadataForm
+    template_name = "core/metadata_edit.html"
+    pk_url_kwarg = "report_id"
+
+    def get_queryset(self):
+        return Report.objects.filter(author=self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["heading"] = "Edit report"
+        context["cancel_url"] = reverse(
+            "view_report", kwargs={"report_id": self.object.pk}
+        )
+        return context
+
+    def form_valid(self, form):
+        previous = Report.objects.get(pk=form.instance.pk)
+        changed = (
+            previous.title != form.cleaned_data["title"]
+            or previous.description != form.cleaned_data["description"]
+        )
+        response = super().form_valid(form)
+        if changed:
+            invalidate_report_pdf(self.object)
+        return response
+
+    def get_success_url(self):
+        return reverse("view_report", kwargs={"report_id": self.object.pk})
 
 
 @login_required
@@ -296,6 +332,32 @@ def download_pdf(request, report_id: str):
     return response
 
 
+def _file_download(field):
+    return FileResponse(
+        field.open("rb"),
+        as_attachment=True,
+        filename=Path(field.name).name,
+    )
+
+
+@login_required
+def download_qrels(request, pk):
+    task = get_object_or_404(RetrievalTask, pk=pk, author=request.user)
+    return _file_download(task.qrels)
+
+
+@login_required
+def download_topics(request, pk):
+    task = get_object_or_404(RetrievalTask, pk=pk, author=request.user)
+    return _file_download(task.topics)
+
+
+@login_required
+def download_run_file(request, pk):
+    run = get_object_or_404(RetrievalRun, pk=pk, ir_task__author=request.user)
+    return _file_download(run.file)
+
+
 class RetrievalTaskListView(LoginRequiredMixin, ListView):
     model = RetrievalTask
     template_name = "core/retrieval_task_list.html"
@@ -310,6 +372,30 @@ class RetrievalTaskDetailView(LoginRequiredMixin, DetailView):
     model = RetrievalTask
     template_name = "core/retrieval_task_detail.html"
     context_object_name = "task"
+
+    def get_queryset(self):
+        return RetrievalTask.objects.filter(author=self.request.user)
+
+
+class RetrievalTaskEditView(LoginRequiredMixin, UpdateView):
+    model = RetrievalTask
+    form_class = RetrievalTaskMetadataForm
+    template_name = "core/metadata_edit.html"
+    context_object_name = "task"
+
+    def get_queryset(self):
+        return RetrievalTask.objects.filter(author=self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["heading"] = "Edit retrieval task"
+        context["cancel_url"] = reverse(
+            "retrieval_task_detail", kwargs={"pk": self.object.pk}
+        )
+        return context
+
+    def get_success_url(self):
+        return reverse("retrieval_task_detail", kwargs={"pk": self.object.pk})
 
 
 class RetrievalTaskUploadView(LoginRequiredMixin, CreateView):
@@ -346,6 +432,30 @@ class RetrievalRunDetailView(LoginRequiredMixin, DetailView):
     model = RetrievalRun
     template_name = "core/retrieval_run_detail.html"
     context_object_name = "run"
+
+    def get_queryset(self):
+        return RetrievalRun.objects.filter(ir_task__author=self.request.user)
+
+
+class RetrievalRunEditView(LoginRequiredMixin, UpdateView):
+    model = RetrievalRun
+    form_class = RetrievalRunMetadataForm
+    template_name = "core/metadata_edit.html"
+    context_object_name = "run"
+
+    def get_queryset(self):
+        return RetrievalRun.objects.filter(ir_task__author=self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["heading"] = "Edit retrieval run"
+        context["cancel_url"] = reverse(
+            "retrieval_run_detail", kwargs={"pk": self.object.pk}
+        )
+        return context
+
+    def get_success_url(self):
+        return reverse("retrieval_run_detail", kwargs={"pk": self.object.pk})
 
 
 class RetrievalRunUploadView(LoginRequiredMixin, CreateView):

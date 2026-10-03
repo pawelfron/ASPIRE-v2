@@ -7,6 +7,10 @@
   <h1 class="text-3xl font-bold mb-3">{{ run.title }}</h1>
   <p>{{ run.description }}</p>
   <p class="font-light text-sm mb-5">Uploaded at: {{ run.date }}</p>
-  <a href="{% url 'retrieval_run_delete' object.id %}" class="btn btn-error">Delete</a>
+  <div class="flex flex-row gap-2">
+    <a href="{% url 'download_run_file' run.id %}" class="btn btn-accent">Download run</a>
+    <a href="{% url 'retrieval_run_edit' run.id %}" class="btn btn-secondary">Edit</a>
+    <a href="{% url 'retrieval_run_delete' run.id %}" class="btn btn-error">Delete</a>
+  </div>
 </div>
 {% endblock %}

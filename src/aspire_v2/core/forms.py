@@ -1,5 +1,5 @@
 from django import forms
-from .models import RetrievalTask, RetrievalRun
+from .models import Report, RetrievalTask, RetrievalRun
 from .lib.reports import all_reports
 from .lib.utils.file_validation import (
     QRELS_HELP,
@@ -49,6 +49,24 @@ class RetrievalRunUploadForm(forms.ModelForm):
         uploaded = self.cleaned_data["file"]
         validate_run_file(uploaded)
         return uploaded
+
+
+class RetrievalTaskMetadataForm(forms.ModelForm):
+    class Meta:
+        model = RetrievalTask
+        fields = ("title", "description")
+
+
+class RetrievalRunMetadataForm(forms.ModelForm):
+    class Meta:
+        model = RetrievalRun
+        fields = ("title", "description")
+
+
+class ReportMetadataForm(forms.ModelForm):
+    class Meta:
+        model = Report
+        fields = ("title", "description")
 
 
 class NewReportGeneralForm(forms.Form):
