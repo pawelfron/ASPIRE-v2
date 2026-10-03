@@ -11,13 +11,19 @@ from .views import (
     report_status,
     # generate_pdf_view,
     download_pdf,
+    download_qrels,
+    download_topics,
+    download_run_file,
     ReportDeleteView,
+    ReportEditView,
     RetrievalTaskListView,
     RetrievalTaskDetailView,
+    RetrievalTaskEditView,
     RetrievalTaskUploadView,
     RetrievalTaskDeleteView,
     RetrievalRunListView,
     RetrievalRunDetailView,
+    RetrievalRunEditView,
     RetrievalRunUploadView,
     RetrievalRunDeleteView,
 )
@@ -39,12 +45,24 @@ urlpatterns = [
     path("confirm_delete/<uuid:pk>", ReportDeleteView.as_view(), name="report_delete"),
     # path("view_report/<uuid:report_id>/pdf", generate_pdf_view, name="generate_pdf"),
     path("view_report/<uuid:report_id>/download", download_pdf, name="download_pdf"),
+    path(
+        "view_report/<uuid:report_id>/edit",
+        ReportEditView.as_view(),
+        name="report_edit",
+    ),
     path("tasks", RetrievalTaskListView.as_view(), name="retrieval_task_list"),
     path(
         "tasks/<uuid:pk>",
         RetrievalTaskDetailView.as_view(),
         name="retrieval_task_detail",
     ),
+    path(
+        "tasks/<uuid:pk>/edit",
+        RetrievalTaskEditView.as_view(),
+        name="retrieval_task_edit",
+    ),
+    path("tasks/<uuid:pk>/qrels", download_qrels, name="download_qrels"),
+    path("tasks/<uuid:pk>/topics", download_topics, name="download_topics"),
     path(
         "tasks/upload", RetrievalTaskUploadView.as_view(), name="retrieval_task_upload"
     ),
@@ -59,6 +77,12 @@ urlpatterns = [
         RetrievalRunDetailView.as_view(),
         name="retrieval_run_detail",
     ),
+    path(
+        "runs/<uuid:pk>/edit",
+        RetrievalRunEditView.as_view(),
+        name="retrieval_run_edit",
+    ),
+    path("runs/<uuid:pk>/file", download_run_file, name="download_run_file"),
     path("runs/upload", RetrievalRunUploadView.as_view(), name="retrieval_run_upload"),
     path(
         "runs/confirm_delete/<uuid:pk>",
