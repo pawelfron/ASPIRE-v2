@@ -38,6 +38,7 @@
           </li>
           <form action="{% url 'logout' %}" method="post" class="block">
             {% csrf_token %}
+            <input class="btn btn-secondary btn-outline min-w-full" type="submit" value="Logout" />
           </form>
         </ul>
       </nav>
@@ -58,8 +59,14 @@
           </svg>
         </label>
 
-        <header class="flex flex-col items-center">
-          {% block header %}{% endblock %}
+        <header class="flex flex-col items-center mb-5">
+          <h1 class="text-3xl font-bold mb-3">{% block header-text %}{% endblock %}</h1>
+
+          <p class="font-light text-sm mb-3">{% block header-date %}{% endblock %}</p>
+          
+          <div class="flex md:flex-row flex-col justify-center gap-2">
+            {% block header-actions %}{% endblock %}
+          </div>
         </header>
 
         <main class="max-w-4/5 mx-auto">

@@ -1,18 +1,14 @@
-{% extends "base/base.html" %}
+{% extends "base/core.html" %}
 
 {% block title %} {{ task.title }} - ASPIRE {% endblock %}
 
-{% block header %}
-<h1 class="text-3xl font-bold mb-3">{{ task.title }}</h1>
-
-<p class="font-light text-sm mb-3">{{ task.date }}</p>
-
-<div class="flex md:flex-row flex-col justify-center gap-2 mb-5">
-  <a href="{% url 'download_qrels' task.id %}" class="btn btn-accent">Download qrels</a>
-  <a href="{% url 'download_topics' task.id %}" class="btn btn-accent">Download topics</a>
-  <a href="{% url 'retrieval_task_edit' task.id %}" class="btn btn-secondary">Edit</a>
-  <a href="{% url 'retrieval_task_delete' task.id %}" class="btn btn-error">Delete</a>
-</div>
+{% block header-text %} {{ task.title }} {% endblock %}
+{% block header-date %} {{ task.date }} {% endblock %}
+{% block header-actions %}
+<a href="{% url 'download_qrels' task.id %}" class="btn btn-accent">Download qrels</a>
+<a href="{% url 'download_topics' task.id %}" class="btn btn-accent">Download topics</a>
+<a href="{% url 'retrieval_task_edit' task.id %}" class="btn btn-secondary">Edit</a>
+<a href="{% url 'retrieval_task_delete' task.id %}" class="btn btn-error">Delete</a>
 {% endblock %}
 
 {% block content %}

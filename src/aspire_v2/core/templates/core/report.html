@@ -1,26 +1,22 @@
-{% extends "base/base.html" %}
+{% extends "base/core.html" %}
 
 {% block title %} {{ report.title }} - ASPIRE {% endblock %}
 
-{% block header %}
-<h1 class="text-3xl font-bold mb-3">{{ report.title }}</h1>
-
-<p class="font-light text-sm mb-3">{{ report.date }}</p>
-
-<div class="flex md:flex-row flex-col justify-center gap-2 mb-5">
-  <a id="pdf-download" href="{% url 'download_pdf' report.id %}" class="btn btn-accent {% if not report.pdf %} hidden {% endif %}"
-    >Download PDF</a
-  >
-  <div id="pdf-status" class="pt-2 mx-3 {% if not pdf_is_generating %} hidden {% endif %}">
-    <span class="loading loading-spinner loading-md" aria-hidden="true"></span>
-  </div>
-  <form id="pdf-generate" method="POST" class="{% if report.pdf or pdf_is_generating or recalculating_ids %} hidden {% endif %}">
-    {% csrf_token %}
-    <input type="submit" class="btn btn-accent" value="Generate PDF" />
-  </form>
-  <a href="{% url 'report_edit' report.id %}" class="btn btn-secondary">Edit</a>
-  <a href="{% url 'report_delete' report.id %}" class="btn btn-error">Delete</a>
+{% block header-text %} {{ report.title }} {% endblock %}
+{% block header-date %} {{ report.date }} {% endblock %}
+{% block header-actions %}
+<a id="pdf-download" href="{% url 'download_pdf' report.id %}" class="btn btn-accent {% if not report.pdf %} hidden {% endif %}">
+  Download PDF
+</a>
+<div id="pdf-status" class="pt-2 mx-3 {% if not pdf_is_generating %} hidden {% endif %}">
+  <span class="loading loading-spinner loading-md" aria-hidden="true"></span>
 </div>
+<form id="pdf-generate" method="POST" class="{% if report.pdf or pdf_is_generating or recalculating_ids %} hidden {% endif %}">
+  {% csrf_token %}
+  <input type="submit" class="btn btn-accent" value="Generate PDF" />
+</form>
+<a href="{% url 'report_edit' report.id %}" class="btn btn-secondary">Edit</a>
+<a href="{% url 'report_delete' report.id %}" class="btn btn-error">Delete</a>
 {% endblock %}
 
 {% block content %}

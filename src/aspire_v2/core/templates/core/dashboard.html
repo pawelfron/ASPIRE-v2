@@ -1,9 +1,9 @@
-{% extends "base/base.html" %}
+{% extends "base/core.html" %}
 
 {% block title %} Dashboard - ASPIRE {% endblock %}
 
-{% block header %}
-<h1 class="text-3xl font-bold mb-3">Generated reports</h1>
+{% block header-text %} Generated reports {% endblock %}
+{% block header-actions %}
 <a href="{% url 'new_report_general' %}" class="btn btn-success">New report</a>
 {% endblock %}
 

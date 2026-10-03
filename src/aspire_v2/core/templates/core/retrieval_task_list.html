@@ -1,9 +1,9 @@
-{% extends "base/base.html" %}
+{% extends "base/core.html" %}
 
 {% block title %} Retrieval tasks - ASPIRE {% endblock %}
 
-{% block header %}
-<h1 class="text-3xl font-bold mb-3">Retrieval tasks</h1>
+{% block header-text %} Retrieval tasks {% endblock %}
+{% block header-actions %}
 <a href="{% url 'retrieval_task_upload' %}" class="btn btn-success">New task</a>
 {% endblock %}
 

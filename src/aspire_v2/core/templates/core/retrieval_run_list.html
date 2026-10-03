@@ -1,12 +1,12 @@
-{% extends "base/base.html" %}
+{% extends "base/core.html" %}
 
 {% block title %} Retrieval runs - ASPIRE {% endblock %}
 
-{% block header %}
-<h1 class="text-3xl font-bold mb-3">Retrieval tasks</h1>
+{% block header-text %} Retrieval runs {% endblock %}
+{% block header-actions %}
 <a href="{% url 'retrieval_run_upload' %}" class="btn btn-success">Upload run</a>
 {% endblock %}
-z
+
 {% block content %}
 <div class="flex flex-wrap gap-2 md:justify-start justify-center mt-5 mb-5">
   {% for run in runs %}
